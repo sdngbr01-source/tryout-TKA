@@ -1,0 +1,26 @@
+
+// Your Firebase configuration
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+     apiKey: "AIzaSyDZSndtBRWFAqg6Ld0oUp_Ap7VgdzwCkQ4",
+  authDomain: "tryout-tka-2026.firebaseapp.com",
+  projectId: "tryout-tka-2026",
+  storageBucket: "tryout-tka-2026.firebasestorage.app",
+  messagingSenderId: "152658619792",
+  appId: "1:152658619792:web:b0194030e4362228019715"
+};
+
+// Inisialisasi Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// Setup Firestore dengan pengaturan timestamp
+db.settings({
+    timestampsInSnapshots: true
+});
+
+// Fungsi untuk generate ID sederhana
+function generateSimpleId() {
+    return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tryout Matematika - SDN Gambirono 01</title>
+    <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img src="../../assets/images/school-logo.png" alt="Logo" style="width: 80px;">
+                <h3>SDN Gambirono 01</h3>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="matematika.html" class="active">Tryout Matematika</a></li>
+                <li><a href="bahasa-indonesia.html">Tryout Bahasa Indonesia</a></li>
+                <li><a href="#" id="logoutBtn">Logout</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="timer-container" id="timer">
+                Waktu tersisa: <span id="timerDisplay">00:00</span>
+            </div>
+            
+            <div class="question-container" id="questionContainer">
+                <div class="question-number" id="questionNumber">Soal 1 dari <span id="totalSoal">0</span></div>
+                <div class="question-text" id="questionText"></div>
+                <img class="question-image" id="questionImage" src="" alt="Gambar Soal" style="display: none;">
+                <div class="options" id="optionsContainer"></div>
+            </div>
+            
+            <div class="navigation-buttons">
+                <button class="nav-btn" id="prevBtn" disabled>Sebelumnya</button>
+                <button class="nav-btn" id="nextBtn">Selanjutnya</button>
+                <button class="nav-btn" id="submitBtn" style="background: #28a745;" onclick="submitTryout()">Selesai</button>
+            </div>
+            
+            <div class="soal-navigator" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;" id="soalNavigator"></div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="../../js/firebase-config.js"></script>
+    <script>
+        // Cek login
+        const userId = sessionStorage.getItem('userId');
+        const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+        
+        if (!userId) {
+            window.location.href = '../login.html';
+        }
+        
+        let soalList = [];
+        let jawabanUser = [];
+        let currentIndex = 0;
+        let timerInterval = null;
+        let waktuTotal = 3600; // 60 menit dalam detik
+        let paketSoal = '';
+        
+        // Load soal
+        loadSoal();
+        
+        async function loadSoal() {
+            try {
+                // Ambil setting tryout
+                const settingDoc = await db.collection('pengaturan').doc('tryout').get();
+                const setting = settingDoc.exists ? settingDoc.data() : { jumlahSoal: 20, waktu: 60 };
+                
+                waktuTotal = setting.waktu * 60;
+                
+                // Ambil soal matematika
+                const soalSnapshot = await db.collection('soal')
+                    .where('mapel', '==', 'Matematika')
+                    .where('aktif', '==', true)
+                    .get();
+                
+                if (soalSnapshot.empty) {
+                    alert('Belum ada soal tersedia');
+                    return;
+                }
+                
+                // Kumpulkan semua soal
+                let semuaSoal = [];
+                soalSnapshot.forEach(doc => {
+                    semuaSoal.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Acak soal menjadi 3 paket
+                const paket = ['A', 'B', 'C'];
+                paketSoal = paket[Math.floor(Math.random() * paket.length)];
+                
+                // Acak urutan soal
+                soalList = shuffleArray(semuaSoal).slice(0, setting.jumlahSoal);
+                
+                // Inisialisasi jawaban user
+                jawabanUser = new Array(soalList.length).fill(null);
+                
+                // Update tampilan
+                document.getElementById('totalSoal').textContent = soalList.length;
+                updateSoalNavigator();
+                tampilkanSoal(0);
+                
+                // Mulai timer
+                mulaiTimer();
+                
+            } catch (error) {
+                console.error('Error loading soal:', error);
+                alert('Gagal memuat soal: ' + error.message);
+            }
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        function tampilkanSoal(index) {
+            if (index < 0 || index >= soalList.length) return;
+            
+            currentIndex = index;
+            const soal = soalList[index];
+            
+            document.getElementById('questionNumber').innerHTML = `Soal ${index + 1} dari ${soalList.length}`;
+            document.getElementById('questionText').textContent = soal.soal;
+            
+            // Tampilkan gambar jika ada
+            const imgElement = document.getElementById('questionImage');
+            if (soal.tautanimg) {
+                imgElement.src = soal.tautanimg;
+                imgElement.style.display = 'block';
+            } else {
+                imgElement.style.display = 'none';
+            }
+            
+            // Buat opsi jawaban berdasarkan tipe soal
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            if (soal.tipe === 'pg') {
+                const pilihan = ['A', 'B', 'C', 'D'];
+                pilihan.forEach(huruf => {
+                    if (soal[huruf]) {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'option';
+                        
+                        const label = document.createElement('label');
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = 'jawaban';
+                        radio.value = huruf;
+                        radio.checked = (jawabanUser[index] === huruf);
+                        radio.onchange = () => simpanJawaban(index, huruf);
+                        
+                        label.appendChild(radio);
+                        label.appendChild(document.createTextNode(` ${huruf}. ${soal[huruf]}`));
+                        optionDiv.appendChild(label);
+                        optionsContainer.appendChild(optionDiv);
+                    }
+                });
+            } else if (soal.tipe === 'multiple') {
+                const pilihan = ['A', 'B', 'C', 'D'];
+                pilihan.forEach(huruf => {
+                    if (soal[huruf]) {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'option';
+                        
+                        const label = document.createElement('label');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = huruf;
+                        checkbox.onchange = () => simpanJawabanMultiple(index);
+                        
+                        label.appendChild(checkbox);
+                        label.appendChild(document.createTextNode(` ${huruf}. ${soal[huruf]}`));
+                        optionDiv.appendChild(label);
+                        optionsContainer.appendChild(optionDiv);
+                    }
+                });
+                
+                if (jawabanUser[index]) {
+                    const jawaban = jawabanUser[index].split('');
+                    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = jawaban.includes(cb.value);
+                    });
+                }
+            } else if (soal.tipe === 'bf') {
+                for (let i = 1; i <= 3; i++) {
+                    if (soal[`pernyataan${i}`]) {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'option';
+                        
+                        const pernyataanDiv = document.createElement('div');
+                        pernyataanDiv.innerHTML = `<strong>Pernyataan ${i}:</strong> ${soal[`pernyataan${i}`]}`;
+                        
+                        const radioContainer = document.createElement('div');
+                        radioContainer.style.marginLeft = '20px';
+                        radioContainer.style.marginTop = '5px';
+                        
+                        const labelBenar = document.createElement('label');
+                        labelBenar.style.marginRight = '15px';
+                        const radioBenar = document.createElement('input');
+                        radioBenar.type = 'radio';
+                        radioBenar.name = `pernyataan${i}`;
+                        radioBenar.value = 'B';
+                        radioBenar.onchange = () => simpanJawabanBF(index);
+                        
+                        labelBenar.appendChild(radioBenar);
+                        labelBenar.appendChild(document.createTextNode(' Benar'));
+                        
+                        const labelSalah = document.createElement('label');
+                        const radioSalah = document.createElement('input');
+                        radioSalah.type = 'radio';
+                        radioSalah.name = `pernyataan${i}`;
+                        radioSalah.value = 'S';
+                        radioSalah.onchange = () => simpanJawabanBF(index);
+                        
+                        labelSalah.appendChild(radioSalah);
+                        labelSalah.appendChild(document.createTextNode(' Salah'));
+                        
+                        radioContainer.appendChild(labelBenar);
+                        radioContainer.appendChild(labelSalah);
+                        
+                        if (jawabanUser[index] && jawabanUser[index][`pernyataan${i}`]) {
+                            if (jawabanUser[index][`pernyataan${i}`] === 'B') {
+                                radioBenar.checked = true;
+                            } else {
+                                radioSalah.checked = true;
+                            }
+                        }
+                        
+                        optionDiv.appendChild(pernyataanDiv);
+                        optionDiv.appendChild(radioContainer);
+                        optionsContainer.appendChild(optionDiv);
+                    }
+                }
+            }
+            
+            document.getElementById('prevBtn').disabled = (index === 0);
+            document.getElementById('nextBtn').disabled = (index === soalList.length - 1);
+            updateSoalNavigator();
+        }
+        
+        function simpanJawaban(index, jawaban) {
+            jawabanUser[index] = jawaban;
+            updateSoalNavigator();
+        }
+        
+        function simpanJawabanMultiple(index) {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const jawaban = Array.from(checkboxes).map(cb => cb.value).join('');
+            jawabanUser[index] = jawaban;
+            updateSoalNavigator();
+        }
+        
+        function simpanJawabanBF(index) {
+            const jawaban = {};
+            for (let i = 1; i <= 3; i++) {
+                const radio = document.querySelector(`input[name="pernyataan${i}"]:checked`);
+                jawaban[`pernyataan${i}`] = radio ? radio.value : null;
+            }
+            jawabanUser[index] = jawaban;
+            updateSoalNavigator();
+        }
+        
+        function updateSoalNavigator() {
+            const navigator = document.getElementById('soalNavigator');
+            navigator.innerHTML = '';
+            
+            for (let i = 0; i < soalList.length; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i + 1;
+                btn.style.padding = '10px 15px';
+                btn.style.border = 'none';
+                btn.style.borderRadius = '5px';
+                btn.style.cursor = 'pointer';
+                btn.style.backgroundColor = jawabanUser[i] ? '#28a745' : '#dc3545';
+                btn.style.color = 'white';
+                btn.onclick = () => tampilkanSoal(i);
+                
+                if (i === currentIndex) {
+                    btn.style.border = '3px solid #ffc107';
+                }
+                
+                navigator.appendChild(btn);
+            }
+        }
+        
+        function mulaiTimer() {
+            const timerDisplay = document.getElementById('timerDisplay');
+            let waktuTersisa = waktuTotal;
+            
+            timerInterval = setInterval(() => {
+                waktuTersisa--;
+                
+                const menit = Math.floor(waktuTersisa / 60);
+                const detik = waktuTersisa % 60;
+                timerDisplay.textContent = `${menit.toString().padStart(2, '0')}:${detik.toString().padStart(2, '0')}`;
+                
+                if (waktuTersisa <= 0) {
+                    clearInterval(timerInterval);
+                    alert('Waktu habis!');
+                    submitTryout();
+                }
+            }, 1000);
+        }
+        
+        async function submitTryout() {
+            clearInterval(timerInterval);
+            
+            // Hitung nilai
+            let benar = 0;
+            for (let i = 0; i < soalList.length; i++) {
+                const soal = soalList[i];
+                const jawaban = jawabanUser[i];
+                
+                if (jawaban) {
+                    if (soal.tipe === 'pg' && jawaban === soal.jawaban) {
+                        benar++;
+                    } else if (soal.tipe === 'multiple' && jawaban === soal.jawaban) {
+                        benar++;
+                    } else if (soal.tipe === 'bf') {
+                        let benarSemua = true;
+                        for (let j = 1; j <= 3; j++) {
+                            if (jawaban[`pernyataan${j}`] !== soal[`jwb${j}`]) {
+                                benarSemua = false;
+                                break;
+                            }
+                        }
+                        if (benarSemua) benar++;
+                    }
+                }
+            }
+            
+            const nilaiPerSoal = 100 / soalList.length;
+            const totalNilai = Math.round(benar * nilaiPerSoal * 100) / 100;
+            
+            // Simpan ke Firestore
+            try {
+                await db.collection('nilai').add({
+                    userId: userId,
+                    namaSiswa: userData.namaLengkap,
+                    nomorPeserta: userData.nomorPeserta,
+                    kelas: userData.kelas,
+                    mapel: 'Matematika',
+                    paket: paketSoal,
+                    nilai: totalNilai,
+                    benar: benar,
+                    totalSoal: soalList.length,
+                    waktu: firebase.firestore.FieldValue.serverTimestamp(),
+                    jawaban: jawabanUser
+                });
+                
+                alert(`Tryout selesai!\nNilai Anda: ${totalNilai}\nBenar: ${benar} dari ${soalList.length} soal`);
+                window.location.href = '../dashboard.html';
+                
+            } catch (error) {
+                console.error('Error saving score:', error);
+                alert('Gagal menyimpan nilai: ' + error.message);
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                tampilkanSoal(currentIndex - 1);
+            }
+        });
+        
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentIndex < soalList.length - 1) {
+                tampilkanSoal(currentIndex + 1);
+            }
+        });
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            clearInterval(timerInterval);
+            sessionStorage.clear();
+            window.location.href = '../login.html';
+        });
+    </script>
+</body>
+</html>

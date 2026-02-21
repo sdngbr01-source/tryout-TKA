@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Tryout TKA SDN Gambirono 01</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="text-center">
+            <img src="../assets/images/school-logo.png" alt="Logo" style="width: 100px; margin-bottom: 20px;">
+            <h2>Admin Login</h2>
+            <p>Masuk dengan Username dan Password</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required placeholder="Masukkan username admin">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Masukkan password">
+            </div>
+            
+            <button type="submit" class="btn-submit">Login</button>
+        </form>
+        
+        <div class="text-center" style="margin-top: 20px;">
+            <p><a href="../index.html">Kembali ke Beranda</a></p>
+        </div>
+    </div>
+    
+    <div id="errorMessage" style="color: red; text-align: center; margin-top: 10px;"></div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorDiv = document.getElementById('errorMessage');
+            
+            try {
+                // Cari admin berdasarkan username
+                const adminSnapshot = await db.collection('admin')
+                    .where('username', '==', username)
+                    .where('password', '==', password)
+                    .get();
+                
+                if (adminSnapshot.empty) {
+                    errorDiv.textContent = 'Username atau password salah';
+                    return;
+                }
+                
+                // Ambil data admin
+                const adminDoc = adminSnapshot.docs[0];
+                const adminData = adminDoc.data();
+                
+                // Simpan data admin ke session
+                sessionStorage.setItem('adminId', adminDoc.id);
+                sessionStorage.setItem('adminName', adminData.nama);
+                
+                window.location.href = 'dashboard.html';
+                
+            } catch (error) {
+                errorDiv.textContent = 'Terjadi kesalahan: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

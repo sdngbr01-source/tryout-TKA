@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Admin - Tryout TKA SDN Gambirono 01</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .school-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .school-logo img {
+            width: 100px;
+            height: 100px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            padding: 10px;
+        }
+        
+        .step-container {
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-content h3 {
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .step-content p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .firebase-config {
+            background: #1e1e1e;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        .status-box {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status-box.info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #1976d2;
+        }
+        
+        .status-box.success {
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            color: #388e3c;
+        }
+        
+        .status-box.warning {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            color: #f57c00;
+        }
+        
+        .status-box.error {
+            background: #ffebee;
+            border: 1px solid #ef9a9a;
+            color: #d32f2f;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .collection-list {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .collection-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .collection-item:last-child {
+            border-bottom: none;
+        }
+        
+        .collection-name {
+            font-weight: 600;
+            color: #333;
+            margin-right: 10px;
+        }
+        
+        .collection-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-exists {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .status-missing {
+            background: #f44336;
+            color: white;
+        }
+        
+        .link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .link a:hover {
+            text-decoration: underline;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar.active {
+            display: block;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+            animation: progress 2s infinite;
+        }
+        
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+        }
+        
+        .btn-retry {
+            background: #ff9800;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="school-logo">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23667eea'/%3E%3Ctext x='50' y='65' font-size='50' text-anchor='middle' fill='white' font-family='Arial'%3E🏫%3C/text%3E%3C/svg%3E" alt="Logo">
+        </div>
+        
+        <h1>Setup Sistem Tryout</h1>
+        <p class="subtitle">SDN Gambirono 01</p>
+        
+        <div class="step-container">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Konfigurasi Firebase</h3>
+                    <p>Pastikan konfigurasi Firebase sudah benar</p>
+                    <div class="firebase-config" id="firebaseConfig">
+                        // Isi dengan konfigurasi Firebase Anda
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Cek Collection Firestore</h3>
+                    <p>Sistem akan mengecek dan membuat collection yang diperlukan</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Buat Admin Pertama</h3>
+                    <p>Buat akun admin untuk mengelola sistem</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="connectionStatus" class="status-box info">
+            🔄 Memeriksa koneksi ke Firestore...
+        </div>
+        
+        <div id="collectionStatus" style="display: none;">
+            <div class="status-box info">
+                <strong>📁 Status Collection:</strong>
+            </div>
+            <div class="collection-list" id="collectionList"></div>
+            <button class="btn-retry" id="retryBtn" style="display: none;" onclick="checkAndCreateCollections()">🔄 Coba Lagi</button>
+        </div>
+        
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill"></div>
+        </div>
+        
+        <div id="adminForm" style="display: none;">
+            <form id="setupForm">
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap Admin</label>
+                    <input type="text" id="nama" required placeholder="Contoh: Admin Tryout" value="Administrator">
+                </div>
+                
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required placeholder="Contoh: admin" value="admin">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Minimal 6 karakter" value="admin123">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Konfirmasi Password</label>
+                    <input type="password" id="confirmPassword" required value="admin123">
+                </div>
+                
+                <button type="submit" id="submitBtn">Buat Admin Sekarang</button>
+            </form>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div class="link">
+            <p><a href="index.html">Kembali ke Beranda</a></p>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script>
+        // 🔥 GANTI DENGAN KONFIGURASI FIREBASE ANDA!
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZSndtBRWFAqg6Ld0oUp_Ap7VgdzwCkQ4",
+  authDomain: "tryout-tka-2026.firebaseapp.com",
+  projectId: "tryout-tka-2026",
+  storageBucket: "tryout-tka-2026.firebasestorage.app",
+  messagingSenderId: "152658619792",
+  appId: "1:152658619792:web:b0194030e4362228019715"
+        };
+        
+        // Tampilkan konfigurasi
+        document.getElementById('firebaseConfig').textContent = 
+            `// Konfigurasi Firebase Anda\nconst firebaseConfig = ${JSON.stringify(firebaseConfig, null, 2)}`;
+        
+        // Inisialisasi Firebase
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log('✅ Firebase initialized');
+        } catch (error) {
+            console.error('❌ Firebase init error:', error);
+            document.getElementById('connectionStatus').innerHTML = `
+                <div class="status-box error">
+                    ❌ Gagal inisialisasi Firebase: ${error.message}<br>
+                    <small>Periksa konfigurasi Firebase Anda</small>
+                </div>
+            `;
+        }
+        
+        // Daftar collection yang diperlukan
+        const requiredCollections = [
+            { name: 'admin', description: 'Data admin' },
+            { name: 'siswa', description: 'Data siswa' },
+            { name: 'soal', description: 'Master soal' },
+            { name: 'nilai', description: 'Hasil tryout' },
+            { name: 'pengaturan', description: 'Pengaturan sistem' }
+        ];
+        
+        let existingCollections = [];
+        
+        // Fungsi untuk mengecek koneksi
+        async function checkConnection() {
+            try {
+                // Coba akses Firestore dengan operasi sederhana
+                const testRef = db.collection('_test').doc('connection');
+                await testRef.set({
+                    timestamp: new Date().toISOString(),
+                    message: 'Test connection'
+                });
+                await testRef.delete();
+                return { success: true, message: 'Koneksi berhasil' };
+            } catch (error) {
+                console.error('Connection error:', error);
+                return { 
+                    success: false, 
+                    message: error.message,
+                    code: error.code 
+                };
+            }
+        }
+        
+        // Fungsi untuk mengecek apakah collection ada
+        async function checkCollectionExists(collectionName) {
+            try {
+                // Coba ambil 1 dokumen dari collection
+                const snapshot = await db.collection(collectionName).limit(1).get();
+                return !snapshot.empty;
+            } catch (error) {
+                // Jika error karena collection tidak ada, kita bisa membuatnya
+                if (error.code === 'permission-denied') {
+                    console.log(`Collection ${collectionName} mungkin belum ada atau tidak bisa diakses`);
+                }
+                return false;
+            }
+        }
+        
+        // Fungsi untuk membuat collection dengan data dummy
+        async function createCollection(collectionName) {
+            try {
+                // Buat dokumen dummy untuk memicu pembuatan collection
+                const dummyRef = db.collection(collectionName).doc('_dummy');
+                await dummyRef.set({
+                    _created: new Date().toISOString(),
+                    _message: 'Dummy data to create collection'
+                });
+                
+                // Hapus dokumen dummy (opsional)
+                await dummyRef.delete();
+                
+                return { success: true, message: `Collection ${collectionName} berhasil dibuat` };
+            } catch (error) {
+                console.error(`Error creating collection ${collectionName}:`, error);
+                return { 
+                    success: false, 
+                    message: error.message,
+                    code: error.code 
+                };
+            }
+        }
+        
+        // Fungsi utama untuk mengecek dan membuat collections
+        async function checkAndCreateCollections() {
+            const progressBar = document.getElementById('progressBar');
+            const collectionStatus = document.getElementById('collectionStatus');
+            const collectionList = document.getElementById('collectionList');
+            const retryBtn = document.getElementById('retryBtn');
+            
+            progressBar.classList.add('active');
+            collectionStatus.style.display = 'block';
+            collectionList.innerHTML = '<div style="text-align: center; padding: 20px;">⏳ Mengecek collections...</div>';
+            retryBtn.style.display = 'none';
+            
+            const results = [];
+            
+            for (const collection of requiredCollections) {
+                // Cek apakah collection ada
+                const exists = await checkCollectionExists(collection.name);
+                
+                if (!exists) {
+                    // Buat collection jika belum ada
+                    const createResult = await createCollection(collection.name);
+                    results.push({
+                        ...collection,
+                        exists: createResult.success,
+                        action: 'dibuat',
+                        message: createResult.message
+                    });
+                } else {
+                    results.push({
+                        ...collection,
+                        exists: true,
+                        action: 'sudah ada'
+                    });
+                }
+            }
+            
+            // Tampilkan hasil
+            let html = '';
+            let allSuccess = true;
+            
+            results.forEach(result => {
+                const statusClass = result.exists ? 'status-exists' : 'status-missing';
+                const statusText = result.exists ? '✅ Ada' : '❌ Tidak Ada';
+                
+                html += `
+                    <div class="collection-item">
+                        <span class="collection-name">${result.name}</span>
+                        <span class="collection-status ${statusClass}">${statusText}</span>
+                        <span style="margin-left: 10px; color: #666; font-size: 12px;">${result.description}</span>
+                    </div>
+                `;
+                
+                if (!result.exists) {
+                    allSuccess = false;
+                }
+            });
+            
+            collectionList.innerHTML = html;
+            progressBar.classList.remove('active');
+            
+            if (allSuccess) {
+                collectionStatus.innerHTML = `
+                    <div class="status-box success">
+                        ✅ Semua collection sudah siap! Silakan buat admin.
+                    </div>
+                `;
+                document.getElementById('adminForm').style.display = 'block';
+            } else {
+                collectionStatus.innerHTML = `
+                    <div class="status-box warning">
+                        ⚠️ Beberapa collection belum bisa dibuat. Coba periksa koneksi dan rules Firebase.
+                    </div>
+                `;
+                retryBtn.style.display = 'block';
+            }
+            
+            return allSuccess;
+        }
+        
+        // Fungsi untuk membuat admin
+        async function createAdmin(nama, username, password) {
+            try {
+                // Cek apakah username sudah ada
+                const existingUser = await db.collection('admin')
+                    .where('username', '==', username)
+                    .get();
+                
+                if (!existingUser.empty) {
+                    return { 
+                        success: false, 
+                        message: 'Username sudah digunakan' 
+                    };
+                }
+                
+                // Buat admin baru
+                const adminData = {
+                    nama: nama,
+                    username: username,
+                    password: password, // Dalam production, hash password!
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    role: 'admin'
+                };
+                
+                const docRef = await db.collection('admin').add(adminData);
+                
+                // Buat pengaturan default
+                await db.collection('pengaturan').doc('tryout').set({
+                    waktu: 60,
+                    jumlahSoal: 20,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                return { 
+                    success: true, 
+                    message: 'Admin berhasil dibuat',
+                    id: docRef.id 
+                };
+            } catch (error) {
+                console.error('Create admin error:', error);
+                return { 
+                    success: false, 
+                    message: error.message,
+                    code: error.code 
+                };
+            }
+        }
+        
+        // Eksekusi saat halaman dimuat
+        window.addEventListener('load', async () => {
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            // Cek koneksi dulu
+            const connection = await checkConnection();
+            
+            if (connection.success) {
+                connectionStatus.className = 'status-box success';
+                connectionStatus.innerHTML = '✅ Terhubung ke Firestore!';
+                
+                // Cek dan buat collections
+                await checkAndCreateCollections();
+                
+            } else {
+                connectionStatus.className = 'status-box error';
+                connectionStatus.innerHTML = `
+                    <strong>❌ Gagal terhubung ke Firestore</strong><br>
+                    Error: ${connection.message}<br>
+                    Kode: ${connection.code}<br><br>
+                    <strong>Solusi:</strong>
+                    <ol style="margin-top: 10px; margin-left: 20px;">
+                        <li>Buka <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+                        <li>Pilih project Anda</li>
+                        <li>Klik "Firestore Database" di menu kiri</li>
+                        <li>Klik "Buat Database" jika belum ada</li>
+                        <li>Pilih mode produksi atau mode uji coba</li>
+                        <li>Klik tab "Rules" dan paste rules berikut:</li>
+                    </ol>
+                    <div style="background: #1e1e1e; color: #fff; padding: 15px; border-radius: 8px; font-family: monospace; margin-top: 10px;">
+rules_version = '2';<br>
+service cloud.firestore {<br>
+&nbsp;&nbsp;match /databases/{database}/documents {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;match /{document=**} {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+                    </div>
+                `;
+            }
+        });
+        
+        // Handle retry
+        document.getElementById('retryBtn').addEventListener('click', checkAndCreateCollections);
+        
+        // Handle form submit
+        document.getElementById('setupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            const nama = document.getElementById('nama').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validasi
+            if (!nama || !username || !password) {
+                resultDiv.innerHTML = '<div class="status-box error">❌ Semua field harus diisi</div>';
+                return;
+            }
+            
+            if (password.length < 6) {
+                resultDiv.innerHTML = '<div class="status-box error">❌ Password minimal 6 karakter</div>';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                resultDiv.innerHTML = '<div class="status-box error">❌ Password tidak cocok</div>';
+                return;
+            }
+            
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Membuat admin...';
+            resultDiv.innerHTML = '<div class="status-box info">⏳ Memproses...</div>';
+            
+            // Buat admin
+            const result = await createAdmin(nama, username, password);
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="status-box success">
+                        <strong>✅ Admin berhasil dibuat!</strong><br><br>
+                        <strong>Username:</strong> ${username}<br>
+                        <strong>Password:</strong> (sesuai input)<br><br>
+                        <a href="admin/login.html" style="display: inline-block; background: #4caf50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Sekarang</a>
+                    </div>
+                `;
+                document.getElementById('setupForm').style.display = 'none';
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="status-box error">
+                        <strong>❌ Gagal membuat admin</strong><br>
+                        ${result.message}<br>
+                        ${result.code ? `Kode: ${result.code}` : ''}
+                    </div>
+                `;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Buat Admin Sekarang';
+            }
+        });
+    </script>
+</body>
+</html>

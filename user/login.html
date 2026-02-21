@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Siswa - Tryout TKA SDN Gambirono 01</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .login-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .login-info p {
+            margin: 5px 0;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="text-center">
+            <img src="../assets/images/school-logo.png" alt="Logo" style="width: 100px; margin-bottom: 20px;">
+            <h2>Login Siswa</h2>
+            <p>Masuk dengan Nama dan Nomor Peserta</p>
+        </div>
+        
+        <div class="login-info">
+            <p><strong>Petunjuk:</strong></p>
+            <p>• Gunakan nama lengkap sesuai data</p>
+            <p>• Nomor Peserta sesuai yang diberikan sekolah</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="nama">Nama Lengkap</label>
+                <input type="text" id="nama" required placeholder="Masukkan nama lengkap">
+            </div>
+            
+            <div class="form-group">
+                <label for="nomorPeserta">Nomor Peserta</label>
+                <input type="text" id="nomorPeserta" required placeholder="Masukkan nomor peserta">
+            </div>
+            
+            <button type="submit" class="btn-submit">Login</button>
+        </form>
+        
+        <div class="text-center" style="margin-top: 20px;">
+            <p>Belum terdaftar? Hubungi admin sekolah</p>
+            <p><a href="../index.html">Kembali ke Beranda</a></p>
+        </div>
+    </div>
+    
+    <div id="errorMessage" style="color: red; text-align: center; margin-top: 10px;"></div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nama = document.getElementById('nama').value.trim();
+            const nomorPeserta = document.getElementById('nomorPeserta').value.trim();
+            const errorDiv = document.getElementById('errorMessage');
+            
+            try {
+                // Cari siswa berdasarkan nama dan nomor peserta
+                const siswaSnapshot = await db.collection('siswa')
+                    .where('namaLengkap', '==', nama)
+                    .where('nomorPeserta', '==', nomorPeserta)
+                    .get();
+                
+                if (siswaSnapshot.empty) {
+                    errorDiv.textContent = 'Nama atau Nomor Peserta tidak ditemukan';
+                    return;
+                }
+                
+                // Ambil data siswa
+                const siswaDoc = siswaSnapshot.docs[0];
+                const siswaData = siswaDoc.data();
+                
+                // Simpan data user ke session
+                sessionStorage.setItem('userId', siswaDoc.id);
+                sessionStorage.setItem('userName', siswaData.namaLengkap);
+                sessionStorage.setItem('userData', JSON.stringify(siswaData));
+                
+                // Arahkan ke halaman identitas
+                window.location.href = 'identitas.html';
+                
+            } catch (error) {
+                errorDiv.textContent = 'Terjadi kesalahan: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

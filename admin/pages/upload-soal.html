@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Master Soal - Admin SDN Gambirono 01</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .format-example {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img src="../../assets/images/school-logo.png" alt="Logo" style="width: 80px;">
+                <h3>Admin Panel</h3>
+                <p>SDN Gambirono 01</p>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="upload-siswa.html">Upload Data Siswa</a></li>
+                <li><a href="upload-soal.html" class="active">Upload Master Soal</a></li>
+                <li><a href="manage-scores.html">Manajemen Nilai</a></li>
+                <li><a href="#" id="logoutBtn">Logout</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Upload Master Soal</h1>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="openTab('pengaturan')">⚙️ Pengaturan</button>
+                <button class="tab-button" onclick="openTab('manual')">✍️ Input Manual</button>
+                <button class="tab-button" onclick="openTab('excel')">📊 Upload Excel</button>
+                <button class="tab-button" onclick="openTab('daftar')">📋 Daftar Soal</button>
+            </div>
+            
+            <!-- Tab Pengaturan -->
+            <div id="pengaturan" class="tab-content active">
+                <div class="upload-section" style="background: white; padding: 30px; border-radius: 10px;">
+                    <h2>Pengaturan Tryout</h2>
+                    <p>Atur waktu pengerjaan dan jumlah soal</p>
+                    
+                    <form id="settingForm">
+                        <div class="form-group">
+                            <label for="waktu">Waktu Pengerjaan (menit)</label>
+                            <input type="number" id="waktu" min="1" max="180" value="60" required>
+                            <small>Waktu yang diberikan untuk mengerjakan tryout</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="jumlahSoal">Jumlah Butir Soal</label>
+                            <input type="number" id="jumlahSoal" min="1" max="100" value="20" required>
+                            <small>Jumlah soal yang akan ditampilkan</small>
+                        </div>
+                        
+                        <button type="submit" class="btn-submit">Simpan Pengaturan</button>
+                    </form>
+                    
+                    <div id="settingStatus" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+            
+            <!-- Tab Input Manual -->
+            <div id="manual" class="tab-content">
+                <div class="upload-section" style="background: white; padding: 30px; border-radius: 10px;">
+                    <h2>Tambah Soal Manual</h2>
+                    
+                    <div class="form-group">
+                        <label for="mapel">Mata Pelajaran</label>
+                        <select id="mapel" required>
+                            <option value="">Pilih Mata Pelajaran</option>
+                            <option value="Matematika">Matematika</option>
+                            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipeSoal">Tipe Soal</label>
+                        <select id="tipeSoal" required>
+                            <option value="">Pilih Tipe Soal</option>
+                            <option value="pg">Pilihan Ganda (PG)</option>
+                            <option value="multiple">Memilih Beberapa Pernyataan Benar</option>
+                            <option value="bf">Benar Salah (3 Pernyataan)</option>
+                        </select>
+                    </div>
+                    
+                    <div id="soalFormContainer"></div>
+                    
+                    <button class="btn-submit" onclick="tambahSoal()" style="margin-top: 20px;" id="tambahSoalBtn">Tambah Soal</button>
+                    
+                    <div id="manualStatus" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+            
+            <!-- Tab Upload Excel -->
+            <div id="excel" class="tab-content">
+                <div class="upload-section" style="background: white; padding: 30px; border-radius: 10px;">
+                    <h2>Upload Soal via Excel</h2>
+                    
+                    <div class="format-example">
+                        <strong>📌 Format File Excel:</strong><br><br>
+                        
+                        <strong>1. Pilihan Ganda (PG):</strong><br>
+                        TipeSoal|Soal|A|B|C|D|tautanimg|Jawaban<br>
+                        <small>Contoh: pg|Berapa hasil 2+2?|1|2|3|4||C</small><br><br>
+                        
+                        <strong>2. Multiple Choice (Memilih beberapa benar):</strong><br>
+                        TipeSoal|Soal|A|B|C|D|tautan|Jawaban<br>
+                        <small>Contoh: multiple|Pilih bilangan genap|1|2|3|4||ABD</small><br><br>
+                        
+                        <strong>3. Benar Salah (3 pernyataan):</strong><br>
+                        TipeSoal|Soal|pernyataan1|pernyataan2|pernyataan3|Jwb1|jwb2|jwb3|tautan<br>
+                        <small>Contoh: bf|Tentang hewan|Ayam bertelur|Kucing berenang|Sapi herbivora|B|S|B|</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapelExcel">Mata Pelajaran</label>
+                        <select id="mapelExcel" required>
+                            <option value="">Pilih Mata Pelajaran</option>
+                            <option value="Matematika">Matematika</option>
+                            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fileSoal">Pilih File Excel (xlsx, xls, csv)</label>
+                        <input type="file" id="fileSoal" accept=".xlsx,.xls,.csv">
+                    </div>
+                    
+                    <button class="btn-submit" onclick="uploadSoalExcel()" id="uploadBtn">Upload Soal</button>
+                    
+                    <div id="uploadStatus" style="margin-top: 20px;"></div>
+                    <div id="progressStatus" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+            
+            <!-- Tab Daftar Soal -->
+            <div id="daftar" class="tab-content">
+                <div class="soal-list" style="background: white; padding: 30px; border-radius: 10px;">
+                    <h2>Daftar Soal</h2>
+                    
+                    <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                        <select id="filterMapelList">
+                            <option value="">Semua Mapel</option>
+                            <option value="Matematika">Matematika</option>
+                            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                        </select>
+                        <button onclick="loadSoalList()" class="btn-submit" style="width: auto; padding: 10px 20px;">Filter</button>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Mapel</th>
+                                    <th>Tipe</th>
+                                    <th>Soal</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="soalTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center;">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="../../js/firebase-config.js"></script>
+    <script>
+        // Cek login admin dari sessionStorage
+        const adminId = sessionStorage.getItem('adminId');
+        const adminName = sessionStorage.getItem('adminName');
+        
+        console.log('Admin ID:', adminId); // Untuk debugging
+        
+        // Jika tidak ada adminId, redirect ke login
+        if (!adminId) {
+            console.log('Tidak ada session admin, redirect ke login');
+            window.location.href = '../login.html';
+        }
+        
+        // Variable global
+        let currentFilter = '';
+        
+        // Fungsi untuk membuka tab
+        function openTab(tabName) {
+            // Sembunyikan semua tab
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Nonaktifkan semua tombol tab
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Aktifkan tab yang dipilih
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load data jika tab daftar
+            if (tabName === 'daftar') {
+                loadSoalList();
+            }
+        }
+        
+        // Load pengaturan saat halaman dimuat
+        window.addEventListener('load', function() {
+            console.log('Halaman dimuat, memuat pengaturan...');
+            loadPengaturan();
+            // Tampilkan form soal untuk tipe default
+            document.getElementById('tipeSoal').addEventListener('change', tampilkanFormSoal);
+        });
+        
+        // Fungsi untuk menampilkan form sesuai tipe soal
+        function tampilkanFormSoal() {
+            const tipe = document.getElementById('tipeSoal').value;
+            const formContainer = document.getElementById('soalFormContainer');
+            
+            let html = '';
+            
+            if (tipe === 'pg') {
+                html = `
+                    <div class="form-group">
+                        <label for="soal">Soal</label>
+                        <textarea id="soal" rows="3" required placeholder="Masukkan soal..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="A">Pilihan A</label>
+                        <input type="text" id="A" required placeholder="Opsi A">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="B">Pilihan B</label>
+                        <input type="text" id="B" required placeholder="Opsi B">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="C">Pilihan C</label>
+                        <input type="text" id="C" required placeholder="Opsi C">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="D">Pilihan D</label>
+                        <input type="text" id="D" required placeholder="Opsi D">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tautanimg">Tautan Gambar (opsional)</label>
+                        <input type="url" id="tautanimg" placeholder="https://...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="jawaban">Jawaban Benar</label>
+                        <select id="jawaban" required>
+                            <option value="">Pilih Jawaban</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                `;
+            } else if (tipe === 'multiple') {
+                html = `
+                    <div class="form-group">
+                        <label for="soal">Soal</label>
+                        <textarea id="soal" rows="3" required placeholder="Masukkan soal..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="A">Pernyataan A</label>
+                        <input type="text" id="A" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="B">Pernyataan B</label>
+                        <input type="text" id="B" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="C">Pernyataan C</label>
+                        <input type="text" id="C" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="D">Pernyataan D</label>
+                        <input type="text" id="D" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tautan">Tautan (opsional)</label>
+                        <input type="url" id="tautan" placeholder="https://...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="jawaban">Jawaban Benar (gabungan huruf, contoh: ABD)</label>
+                        <input type="text" id="jawaban" required placeholder="Contoh: ABD">
+                        <small>Gabungkan huruf tanpa spasi, misal: ABD berarti A, B, dan D benar</small>
+                    </div>
+                `;
+            } else if (tipe === 'bf') {
+                html = `
+                    <div class="form-group">
+                        <label for="soal">Soal/Pengantar</label>
+                        <textarea id="soal" rows="3" required placeholder="Masukkan soal..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pernyataan1">Pernyataan 1</label>
+                        <input type="text" id="pernyataan1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pernyataan2">Pernyataan 2</label>
+                        <input type="text" id="pernyataan2" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pernyataan3">Pernyataan 3</label>
+                        <input type="text" id="pernyataan3" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="jwb1">Jawaban Pernyataan 1</label>
+                        <select id="jwb1" required>
+                            <option value="">Pilih Jawaban</option>
+                            <option value="B">Benar</option>
+                            <option value="S">Salah</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="jwb2">Jawaban Pernyataan 2</label>
+                        <select id="jwb2" required>
+                            <option value="">Pilih Jawaban</option>
+                            <option value="B">Benar</option>
+                            <option value="S">Salah</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="jwb3">Jawaban Pernyataan 3</label>
+                        <select id="jwb3" required>
+                            <option value="">Pilih Jawaban</option>
+                            <option value="B">Benar</option>
+                            <option value="S">Salah</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tautan">Tautan Gambar (opsional)</label>
+                        <input type="url" id="tautan" placeholder="https://...">
+                    </div>
+                `;
+            }
+            
+            formContainer.innerHTML = html;
+        }
+        
+        // Load pengaturan
+        async function loadPengaturan() {
+            try {
+                console.log('Mencoba load pengaturan...');
+                const settingDoc = await db.collection('pengaturan').doc('tryout').get();
+                
+                if (settingDoc.exists) {
+                    const data = settingDoc.data();
+                    document.getElementById('waktu').value = data.waktu || 60;
+                    document.getElementById('jumlahSoal').value = data.jumlahSoal || 20;
+                    console.log('Pengaturan ditemukan:', data);
+                } else {
+                    console.log('Pengaturan belum ada, menggunakan default');
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                document.getElementById('settingStatus').innerHTML = `
+                    <div class="error-message">
+                        Gagal memuat pengaturan: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Simpan pengaturan
+        document.getElementById('settingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('settingStatus');
+            const waktu = parseInt(document.getElementById('waktu').value);
+            const jumlahSoal = parseInt(document.getElementById('jumlahSoal').value);
+            
+            statusDiv.innerHTML = '<div class="success-message">⏳ Menyimpan...</div>';
+            
+            try {
+                await db.collection('pengaturan').doc('tryout').set({
+                    waktu: waktu,
+                    jumlahSoal: jumlahSoal,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                statusDiv.innerHTML = '<div class="success-message">✅ Pengaturan berhasil disimpan!</div>';
+                
+                // Hilangkan pesan setelah 3 detik
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                statusDiv.innerHTML = `
+                    <div class="error-message">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+            }
+        });
+        
+        // Tambah soal manual
+        async function tambahSoal() {
+            const mapel = document.getElementById('mapel').value;
+            const tipe = document.getElementById('tipeSoal').value;
+            const statusDiv = document.getElementById('manualStatus');
+            const btn = document.getElementById('tambahSoalBtn');
+            
+            if (!mapel || !tipe) {
+                statusDiv.innerHTML = '<div class="error-message">❌ Pilih mata pelajaran dan tipe soal</div>';
+                return;
+            }
+            
+            // Disable button
+            btn.disabled = true;
+            btn.textContent = '⏳ Menyimpan...';
+            statusDiv.innerHTML = '<div class="success-message">⏳ Menyimpan soal...</div>';
+            
+            try {
+                const soalData = {
+                    mapel: mapel,
+                    tipe: tipe,
+                    aktif: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Ambil data sesuai tipe
+                if (tipe === 'pg') {
+                    soalData.soal = document.getElementById('soal').value;
+                    soalData.A = document.getElementById('A').value;
+                    soalData.B = document.getElementById('B').value;
+                    soalData.C = document.getElementById('C').value;
+                    soalData.D = document.getElementById('D').value;
+                    soalData.tautanimg = document.getElementById('tautanimg').value || '';
+                    soalData.jawaban = document.getElementById('jawaban').value;
+                } else if (tipe === 'multiple') {
+                    soalData.soal = document.getElementById('soal').value;
+                    soalData.A = document.getElementById('A').value;
+                    soalData.B = document.getElementById('B').value;
+                    soalData.C = document.getElementById('C').value;
+                    soalData.D = document.getElementById('D').value;
+                    soalData.tautan = document.getElementById('tautan').value || '';
+                    soalData.jawaban = document.getElementById('jawaban').value;
+                } else if (tipe === 'bf') {
+                    soalData.soal = document.getElementById('soal').value;
+                    soalData.pernyataan1 = document.getElementById('pernyataan1').value;
+                    soalData.pernyataan2 = document.getElementById('pernyataan2').value;
+                    soalData.pernyataan3 = document.getElementById('pernyataan3').value;
+                    soalData.jwb1 = document.getElementById('jwb1').value;
+                    soalData.jwb2 = document.getElementById('jwb2').value;
+                    soalData.jwb3 = document.getElementById('jwb3').value;
+                    soalData.tautan = document.getElementById('tautan').value || '';
+                }
+                
+                // Validasi data tidak boleh kosong
+                for (let key in soalData) {
+                    if (soalData[key] === '' && key !== 'tautanimg' && key !== 'tautan') {
+                        throw new Error(`Field ${key} tidak boleh kosong`);
+                    }
+                }
+                
+                // Simpan ke Firestore
+                await db.collection('soal').add(soalData);
+                
+                statusDiv.innerHTML = '<div class="success-message">✅ Soal berhasil ditambahkan!</div>';
+                
+                // Reset form
+                document.getElementById('soalFormContainer').innerHTML = '';
+                document.getElementById('tipeSoal').value = '';
+                document.getElementById('mapel').value = '';
+                
+                // Refresh daftar soal
+                loadSoalList();
+                
+            } catch (error) {
+                console.error('Error adding soal:', error);
+                statusDiv.innerHTML = `
+                    <div class="error-message">
+                        ❌ Gagal: ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Enable button
+                btn.disabled = false;
+                btn.textContent = 'Tambah Soal';
+            }
+        }
+        
+        // Upload soal via Excel
+       // Upload soal via Excel
+async function uploadSoalExcel() {
+    const mapel = document.getElementById('mapelExcel').value;
+    const fileInput = document.getElementById('fileSoal');
+    const statusDiv = document.getElementById('uploadStatus');
+    const progressDiv = document.getElementById('progressStatus');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    if (!mapel) {
+        statusDiv.innerHTML = '<div class="error-message">❌ Pilih mata pelajaran</div>';
+        return;
+    }
+    
+    if (!fileInput.files[0]) {
+        statusDiv.innerHTML = '<div class="error-message">❌ Pilih file terlebih dahulu</div>';
+        return;
+    }
+    
+    // Disable button
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = '⏳ Mengupload...';
+    statusDiv.innerHTML = '<div class="success-message">⏳ Membaca file...</div>';
+    progressDiv.innerHTML = '';
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = async function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            
+            // Konversi ke JSON dengan opsi header:1 untuk mendapatkan array
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+            
+            console.log('Data Excel:', jsonData); // Untuk debugging
+            
+            let success = 0;
+            let failed = 0;
+            let errors = [];
+            
+            statusDiv.innerHTML = `<div class="success-message">⏳ Memproses ${jsonData.length - 1} soal...</div>`;
+            
+            // Lewati baris pertama (header)
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                
+                // Lewati baris kosong
+                if (!row || row.length === 0 || !row[0]) continue;
+                
+                try {
+                    // Bersihkan data: hapus spasi berlebih dan ubah ke string
+                    const cleanRow = row.map(cell => {
+                        if (cell === null || cell === undefined) return '';
+                        return String(cell).trim();
+                    });
+                    
+                    const tipe = cleanRow[0]?.toLowerCase();
+                    
+                    if (!tipe || (tipe !== 'pg' && tipe !== 'multiple' && tipe !== 'bf')) {
+                        failed++;
+                        errors.push(`Baris ${i+1}: Tipe soal tidak valid (${tipe})`);
+                        continue;
+                    }
+                    
+                    const soalData = {
+                        mapel: mapel,
+                        tipe: tipe,
+                        aktif: true,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    if (tipe === 'pg') {
+                        // Format: Tipe|Soal|A|B|C|D|Gambar|Jawaban
+                        soalData.soal = cleanRow[1] || '';
+                        soalData.A = cleanRow[2] || '';
+                        soalData.B = cleanRow[3] || '';
+                        soalData.C = cleanRow[4] || '';
+                        soalData.D = cleanRow[5] || '';
+                        soalData.tautanimg = cleanRow[6] || '';
+                        soalData.jawaban = cleanRow[7] || '';
+                        
+                        // Validasi
+                        if (!soalData.soal || !soalData.A || !soalData.B || !soalData.C || !soalData.D || !soalData.jawaban) {
+                            throw new Error('Data tidak lengkap');
+                        }
+                    } 
+                    else if (tipe === 'multiple') {
+                        // Format: Tipe|Soal|A|B|C|D|Gambar|Jawaban
+                        soalData.soal = cleanRow[1] || '';
+                        soalData.A = cleanRow[2] || '';
+                        soalData.B = cleanRow[3] || '';
+                        soalData.C = cleanRow[4] || '';
+                        soalData.D = cleanRow[5] || '';
+                        soalData.tautan = cleanRow[6] || '';
+                        soalData.jawaban = cleanRow[7] || '';
+                        
+                        // Validasi
+                        if (!soalData.soal || !soalData.A || !soalData.B || !soalData.C || !soalData.D || !soalData.jawaban) {
+                            throw new Error('Data tidak lengkap');
+                        }
+                    } 
+                    else if (tipe === 'bf') {
+                        // Format: Tipe|Soal|Pernyataan1|Pernyataan2|Pernyataan3|Jwb1|Jwb2|Jwb3|Gambar
+                        
+                        // Coba deteksi posisi kolom berdasarkan panjang array
+                        if (cleanRow.length >= 8) {
+                            // Format dengan 8 kolom (tanpa gambar)
+                            soalData.soal = cleanRow[1] || '';
+                            soalData.pernyataan1 = cleanRow[2] || '';
+                            soalData.pernyataan2 = cleanRow[3] || '';
+                            soalData.pernyataan3 = cleanRow[4] || '';
+                            soalData.jwb1 = cleanRow[5] || '';
+                            soalData.jwb2 = cleanRow[6] || '';
+                            soalData.jwb3 = cleanRow[7] || '';
+                            soalData.tautan = ''; // Tidak ada gambar
+                        } 
+                        else if (cleanRow.length >= 9) {
+                            // Format dengan 9 kolom (dengan gambar)
+                            soalData.soal = cleanRow[1] || '';
+                            soalData.pernyataan1 = cleanRow[2] || '';
+                            soalData.pernyataan2 = cleanRow[3] || '';
+                            soalData.pernyataan3 = cleanRow[4] || '';
+                            soalData.jwb1 = cleanRow[5] || '';
+                            soalData.jwb2 = cleanRow[6] || '';
+                            soalData.jwb3 = cleanRow[7] || '';
+                            soalData.tautan = cleanRow[8] || '';
+                        }
+                        else {
+                            // Format alternatif jika kolom digabung
+                            const gabung = cleanRow[1] || '';
+                            const parts = gabung.split('|');
+                            
+                            if (parts.length >= 7) {
+                                soalData.soal = parts[0] || '';
+                                soalData.pernyataan1 = parts[1] || '';
+                                soalData.pernyataan2 = parts[2] || '';
+                                soalData.pernyataan3 = parts[3] || '';
+                                soalData.jwb1 = parts[4] || '';
+                                soalData.jwb2 = parts[5] || '';
+                                soalData.jwb3 = parts[6] || '';
+                                soalData.tautan = parts[7] || '';
+                            } else {
+                                throw new Error('Format tidak dikenal');
+                            }
+                        }
+                        
+                        // Validasi data BF
+                        if (!soalData.soal) {
+                            throw new Error('Soal tidak boleh kosong');
+                        }
+                        if (!soalData.pernyataan1 || !soalData.pernyataan2 || !soalData.pernyataan3) {
+                            throw new Error('Pernyataan 1,2,3 harus diisi');
+                        }
+                        if (!soalData.jwb1 || !soalData.jwb2 || !soalData.jwb3) {
+                            throw new Error('Jawaban 1,2,3 harus diisi');
+                        }
+                        
+                        // Konversi jawaban ke huruf besar
+                        soalData.jwb1 = soalData.jwb1.toUpperCase();
+                        soalData.jwb2 = soalData.jwb2.toUpperCase();
+                        soalData.jwb3 = soalData.jwb3.toUpperCase();
+                        
+                        // Validasi jawaban harus B atau S
+                        if (!['B', 'S'].includes(soalData.jwb1) || 
+                            !['B', 'S'].includes(soalData.jwb2) || 
+                            !['B', 'S'].includes(soalData.jwb3)) {
+                            throw new Error('Jawaban harus B (Benar) atau S (Salah)');
+                        }
+                    }
+                    
+                    // Simpan ke Firestore
+                    await db.collection('soal').add(soalData);
+                    success++;
+                    
+                    // Update progress
+                    progressDiv.innerHTML = `✅ ${success} berhasil, ❌ ${failed} gagal...`;
+                    
+                } catch (error) {
+                    console.error('Error adding soal baris ' + (i+1) + ':', error);
+                    failed++;
+                    errors.push(`Baris ${i+1}: ${error.message}`);
+                }
+            }
+            
+            let errorHtml = '';
+            if (errors.length > 0) {
+                errorHtml = '<br><br><strong>📋 Detail Error:</strong><br>' + errors.slice(0, 10).join('<br>');
+                if (errors.length > 10) {
+                    errorHtml += `<br>... dan ${errors.length - 10} error lainnya`;
+                }
+            }
+            
+            statusDiv.innerHTML = `
+                <div class="success-message">
+                    ✅ Upload selesai!<br>
+                    <strong>Berhasil:</strong> ${success}<br>
+                    <strong>Gagal:</strong> ${failed}
+                    ${errorHtml}
+                </div>
+            `;
+            
+            // Reset file input
+            fileInput.value = '';
+            
+            // Refresh daftar soal
+            loadSoalList();
+            
+        } catch (error) {
+            console.error('Error processing file:', error);
+            statusDiv.innerHTML = `
+                <div class="error-message">
+                    ❌ Error: ${error.message}
+                </div>
+            `;
+        } finally {
+            // Enable button
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload Soal';
+        }
+    };
+    
+    reader.onerror = function(error) {
+        statusDiv.innerHTML = `
+            <div class="error-message">
+                ❌ Error membaca file: ${error}
+            </div>
+        `;
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload Soal';
+    };
+    
+    reader.readAsArrayBuffer(file);
+}
+        
+        // Load daftar soal
+        async function loadSoalList() {
+            const tbody = document.getElementById('soalTableBody');
+            const filterMapel = document.getElementById('filterMapelList').value;
+            
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">⏳ Memuat data...</td></tr>';
+            
+            try {
+                let query = db.collection('soal').orderBy('createdAt', 'desc');
+                
+                if (filterMapel) {
+                    query = query.where('mapel', '==', filterMapel);
+                }
+                
+                const soalSnapshot = await query.get();
+                
+                if (soalSnapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">📭 Belum ada soal</td></tr>';
+                    return;
+                }
+                
+                let no = 1;
+                let html = '';
+                
+                for (const doc of soalSnapshot.docs) {
+                    const data = doc.data();
+                    const tipeText = {
+                        'pg': 'Pilihan Ganda',
+                        'multiple': 'Multiple Choice',
+                        'bf': 'Benar Salah'
+                    }[data.tipe] || data.tipe;
+                    
+                    const statusColor = data.aktif ? 'green' : 'red';
+                    const statusText = data.aktif ? 'Aktif' : 'Nonaktif';
+                    
+                    html += `
+                        <tr>
+                            <td>${no++}</td>
+                            <td>${data.mapel || '-'}</td>
+                            <td>${tipeText}</td>
+                            <td>${(data.soal || '').substring(0, 50)}${data.soal?.length > 50 ? '...' : ''}</td>
+                            <td>
+                                <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>
+                            </td>
+                            <td>
+                                <button onclick="toggleSoal('${doc.id}', ${!data.aktif})" style="background: ${data.aktif ? '#ff9800' : '#4caf50'}; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">
+                                    ${data.aktif ? 'Nonaktifkan' : 'Aktifkan'}
+                                </button>
+                                <button onclick="hapusSoal('${doc.id}')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Hapus</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading soal:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: red;">
+                            ❌ Error: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Toggle aktif/nonaktif soal
+        async function toggleSoal(id, aktif) {
+            try {
+                await db.collection('soal').doc(id).update({
+                    aktif: aktif
+                });
+                loadSoalList();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Hapus soal
+        async function hapusSoal(id) {
+            if (!confirm('Yakin ingin menghapus soal ini?')) return;
+            
+            try {
+                await db.collection('soal').doc(id).delete();
+                loadSoalList();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            sessionStorage.clear();
+            window.location.href = '../login.html';
+        });
+        
+        // Filter mapel
+        document.getElementById('filterMapelList').addEventListener('change', loadSoalList);
+    </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data Siswa - Admin SDN Gambirono 01</title>
+    <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img src="../../assets/images/school-logo.png" alt="Logo" style="width: 80px;">
+                <h3>Admin Panel</h3>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="upload-siswa.html" class="active">Upload Data Siswa</a></li>
+                <li><a href="upload-soal.html">Upload Master Soal</a></li>
+                <li><a href="manage-scores.html">Manajemen Nilai</a></li>
+                <li><a href="#" id="logoutBtn">Logout</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Upload Data Siswa</h1>
+            
+            <div class="upload-section" style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+                <h2>Upload File Excel</h2>
+                <p>Format: Nama Lengkap|Nomor Peserta|Kelas|NISN|Tempat Lahir|Tanggal Lahir</p>
+                
+                <div class="form-group">
+                    <label for="fileInput">Pilih File Excel</label>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+                </div>
+                
+                <button class="btn-submit" onclick="uploadSiswa()" style="width: auto; padding: 10px 30px;">Upload Data</button>
+                
+                <div id="uploadStatus" style="margin-top: 20px;"></div>
+            </div>
+            
+            <div class="manual-input" style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+                <h2>Tambah Siswa Manual</h2>
+                
+                <form id="siswaForm">
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap</label>
+                        <input type="text" id="nama" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nomorPeserta">Nomor Peserta</label>
+                        <input type="text" id="nomorPeserta" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kelas">Kelas</label>
+                        <select id="kelas" required>
+                            <option value="">Pilih Kelas</option>
+                            <option value="1">Kelas 1</option>
+                            <option value="2">Kelas 2</option>
+                            <option value="3">Kelas 3</option>
+                            <option value="4">Kelas 4</option>
+                            <option value="5">Kelas 5</option>
+                            <option value="6">Kelas 6</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nisn">NISN</label>
+                        <input type="text" id="nisn" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tempatLahir">Tempat Lahir</label>
+                        <input type="text" id="tempatLahir" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tanggalLahir">Tanggal Lahir</label>
+                        <input type="date" id="tanggalLahir" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit">Tambah Siswa</button>
+                </form>
+            </div>
+            
+            <div class="siswa-list" style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+                <h2>Daftar Siswa</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama</th>
+                                <th>Nomor Peserta</th>
+                                <th>Kelas</th>
+                                <th>NISN</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="siswaTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center;">Memuat data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="../../js/firebase-config.js"></script>
+    <script>
+        // Cek admin login
+        const adminId = sessionStorage.getItem('adminId');
+        if (!adminId) {
+            window.location.href = 'login.html';
+        }
+        
+        loadSiswaList();
+        
+        async function loadSiswaList() {
+            try {
+                const siswaSnapshot = await db.collection('siswa').orderBy('namaLengkap').get();
+                const tbody = document.getElementById('siswaTableBody');
+                tbody.innerHTML = '';
+                
+                if (siswaSnapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Belum ada data siswa</td></tr>';
+                    return;
+                }
+                
+                let no = 1;
+                siswaSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${no++}</td>
+                        <td>${data.namaLengkap || '-'}</td>
+                        <td>${data.nomorPeserta || '-'}</td>
+                        <td>Kelas ${data.kelas || '-'}</td>
+                        <td>${data.nisn || '-'}</td>
+                        <td>
+                            <button onclick="hapusSiswa('${doc.id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading siswa:', error);
+            }
+        }
+        
+        async function uploadSiswa() {
+            const fileInput = document.getElementById('fileInput');
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            if (!fileInput.files[0]) {
+                alert('Pilih file terlebih dahulu');
+                return;
+            }
+            
+            statusDiv.innerHTML = '<p>Mengupload data...</p>';
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    let success = 0;
+                    let failed = 0;
+                    
+                    // Lewati header jika ada
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row.length < 6) continue;
+                        
+                        try {
+                            const [nama, nomorPeserta, kelas, nisn, tempatLahir, tanggalLahir] = row;
+                            
+                            // Cek apakah nomor peserta sudah ada
+                            const existingSnapshot = await db.collection('siswa')
+                                .where('nomorPeserta', '==', nomorPeserta.toString())
+                                .get();
+                            
+                            if (!existingSnapshot.empty) {
+                                failed++;
+                                continue;
+                            }
+                            
+                            // Simpan data siswa
+                            await db.collection('siswa').add({
+                                namaLengkap: nama,
+                                nomorPeserta: nomorPeserta.toString(),
+                                kelas: kelas.toString(),
+                                nisn: nisn.toString(),
+                                tempatLahir: tempatLahir,
+                                tanggalLahir: tanggalLahir,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            
+                            success++;
+                        } catch (error) {
+                            console.error('Error adding siswa:', error);
+                            failed++;
+                        }
+                    }
+                    
+                    statusDiv.innerHTML = `<p style="color: green;">Upload selesai! Berhasil: ${success}, Gagal: ${failed}</p>`;
+                    loadSiswaList();
+                    
+                } catch (error) {
+                    statusDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        document.getElementById('siswaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const nomorPeserta = document.getElementById('nomorPeserta').value;
+                
+                // Cek apakah nomor peserta sudah ada
+                const existingSnapshot = await db.collection('siswa')
+                    .where('nomorPeserta', '==', nomorPeserta)
+                    .get();
+                
+                if (!existingSnapshot.empty) {
+                    alert('Nomor peserta sudah terdaftar');
+                    return;
+                }
+                
+                // Simpan data siswa
+                await db.collection('siswa').add({
+                    namaLengkap: document.getElementById('nama').value,
+                    nomorPeserta: nomorPeserta,
+                    kelas: document.getElementById('kelas').value,
+                    nisn: document.getElementById('nisn').value,
+                    tempatLahir: document.getElementById('tempatLahir').value,
+                    tanggalLahir: document.getElementById('tanggalLahir').value,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert('Siswa berhasil ditambahkan');
+                document.getElementById('siswaForm').reset();
+                loadSiswaList();
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        async function hapusSiswa(id) {
+            if (!confirm('Yakin ingin menghapus siswa ini?')) return;
+            
+            try {
+                await db.collection('siswa').doc(id).delete();
+                alert('Siswa berhasil dihapus');
+                loadSiswaList();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>

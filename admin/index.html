@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Tryout TKA SDN Gambirono 01</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="text-center">
+            <img src="../assets/images/school-logo.png" alt="Logo" style="width: 100px; margin-bottom: 20px;">
+            <h2>Admin Login</h2>
+            <p>Masuk ke panel admin</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Admin</label>
+                <input type="email" id="email" required placeholder="Masukkan email admin">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Masukkan password">
+            </div>
+            
+            <button type="submit" class="btn-submit">Login</button>
+        </form>
+        
+        <div class="text-center" style="margin-top: 20px;">
+            <p><a href="../index.html">Kembali ke Beranda</a></p>
+        </div>
+    </div>
+    
+    <div id="errorMessage" style="color: red; text-align: center; margin-top: 10px;"></div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="../js/firebase-config.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Cek role admin
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                const userData = userDoc.data();
+                
+                if (userData && userData.role === 'admin') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    await auth.signOut();
+                    errorDiv.textContent = 'Akun ini bukan admin';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Email atau password salah';
+            }
+        });
+    </script>
+</body>
+</html>

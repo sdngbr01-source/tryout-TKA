@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ujian - TKA SDN Gambirono 01</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="timer" id="timer">00:00</div>
+    
+    <div class="container" style="margin-top: 80px;">
+        <div class="question-container">
+            <div id="question-display"></div>
+            
+            <div class="navigation">
+                <button class="btn" onclick="prevQuestion()">Previous</button>
+                <span id="question-counter">1 / 0</span>
+                <button class="btn" onclick="nextQuestion()">Next</button>
+            </div>
+            
+            <button class="btn" onclick="selesaiUjian()" style="width: auto; margin: 20px auto;">Selesai Ujian</button>
+        </div>
+    </div>
+    
+    <div class="question-nav" id="question-nav"></div>
+
+    <script type="module">
+        import { auth, db } from '../js/firebase-config.js';
+        import { collection, query, where, getDocs, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        let questions = [];
+        let currentQuestion = 0;
+        let answers = {};
+        let timer;
+        let waktuTersisa;
+        let mapel = localStorage.getItem('selectedMapel');
+        let identitas = JSON.parse(localStorage.getItem('identitas'));
+
+        // Initialize ujian
+        async function initUjian() {
+            // Load settings
+            const settingsDoc = await getDoc(doc(db, "settings", "ujian"));
+            const settings = settingsDoc.data();
+            
+            const jumlahSoal = mapel === 'matematika' ? 
+                settings.jumlahSoalMatematika : settings.jumlahSoalIndonesia;
+            const waktu = mapel === 'matematika' ? 
+                settings.waktuMatematika : settings.waktuIndonesia;
+            
+            waktuTersisa = waktu * 60; // Convert to seconds
+            updateTimerDisplay();
+            
+            // Load questions
+            const soalQuery = query(collection(db, "soal"), where("mapel", "==", mapel));
+            const soalSnapshot = await getDocs(soalQuery);
+            
+            let allQuestions = [];
+            soalSnapshot.forEach(doc => {
+                allQuestions.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Randomize and split into 3 packages
+            questions = shuffleArray(allQuestions).slice(0, jumlahSoal);
+            
+            // Randomize lagi untuk setiap paket (A, B, C)
+            // Ini akan membuat 3 paket berbeda berdasarkan random seed
+            questions = shuffleArray(questions);
+            
+            renderQuestion();
+            startTimer();
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function renderQuestion() {
+            if (questions.length === 0) return;
+            
+            const q = questions[currentQuestion];
+            let html = `
+                <div class="question-box">
+                    <h3>Soal ${currentQuestion + 1} dari ${questions.length}</h3>
+                    ${q.imgUrl ? `<img src="${q.imgUrl}" alt="Soal Image" style="max-width: 100%; margin: 20px 0;">` : ''}
+                    <p class="question-text">${q.soal}</p>
+                    <div class="options">
+            `;
+            
+            const options = ['A', 'B', 'C', 'D'];
+            options.forEach(opt => {
+                const optionKey = `pilihan${opt}`;
+                const checked = answers[currentQuestion] === opt ? 'checked' : '';
+                html += `
+                    <div class="option">
+                        <input type="radio" name="question" value="${opt}" id="opt${opt}" 
+                               ${checked} onchange="saveAnswer(${currentQuestion}, '${opt}')">
+                        <label for="opt${opt}">${opt}. ${q[optionKey]}</label>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('question-display').innerHTML = html;
+            document.getElementById('question-counter').textContent = 
+                `${currentQuestion + 1} / ${questions.length}`;
+            
+            renderNavigation();
+        }
+
+        function renderNavigation() {
+            let navHtml = '';
+            for (let i = 0; i < questions.length; i++) {
+                const answered = answers[i] ? 'answered' : '';
+                const active = i === currentQuestion ? 'active' : '';
+                navHtml += `<div class="question-number ${answered} ${active}" 
+                               onclick="goToQuestion(${i})">${i + 1}</div>`;
+            }
+            document.getElementById('question-nav').innerHTML = navHtml;
+        }
+
+        window.saveAnswer = function(index, answer) {
+            answers[index] = answer;
+            renderNavigation();
+        }
+
+        window.nextQuestion = function() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                renderQuestion();
+            }
+        }
+
+        window.prevQuestion = function() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        window.goToQuestion = function(index) {
+            currentQuestion = index;
+            renderQuestion();
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                waktuTersisa--;
+                updateTimerDisplay();
+                
+                if (waktuTersisa <= 0) {
+                    clearInterval(timer);
+                    selesaiUjian();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(waktuTersisa / 60);
+            const seconds = waktuTersisa % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        window.selesaiUjian = async function() {
+            clearInterval(timer);
+            
+            // Calculate score
+            let correct = 0;
+            questions.forEach((q, index) => {
+                if (answers[index] === q.kunci) {
+                    correct++;
+                }
+            });
+            
+            const score = Math.round((correct / questions.length) * 100);
+            
+            // Save result to Firebase
+            await addDoc(collection(db, "hasil"), {
+                userId: auth.currentUser?.uid,
+                nama: identitas.namaLengkap,
+                nomorPeserta: identitas.nomorPeserta,
+                mapel: mapel,
+                skor: score,
+                jawaban: answers,
+                waktu: new Date()
+            });
+            
+            alert(`Ujian selesai! Skor Anda: ${score}`);
+            window.location.href = 'dashboard.html';
+        }
+
+        initUjian();
+    </script>
+</body>
+</html>
