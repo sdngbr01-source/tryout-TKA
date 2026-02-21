@@ -486,91 +486,94 @@
         });
         
         // Tambah soal manual
-        async function tambahSoal() {
-            const mapel = document.getElementById('mapel').value;
-            const tipe = document.getElementById('tipeSoal').value;
-            const statusDiv = document.getElementById('manualStatus');
-            const btn = document.getElementById('tambahSoalBtn');
-            
-            if (!mapel || !tipe) {
-                statusDiv.innerHTML = '<div class="error-message">❌ Pilih mata pelajaran dan tipe soal</div>';
-                return;
-            }
-            
-            // Disable button
-            btn.disabled = true;
-            btn.textContent = '⏳ Menyimpan...';
-            statusDiv.innerHTML = '<div class="success-message">⏳ Menyimpan soal...</div>';
-            
-            try {
-                const soalData = {
-                    mapel: mapel,
-                    tipe: tipe,
-                    aktif: true,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                // Ambil data sesuai tipe
-                if (tipe === 'pg') {
-                    soalData.soal = document.getElementById('soal').value;
-                    soalData.A = document.getElementById('A').value;
-                    soalData.B = document.getElementById('B').value;
-                    soalData.C = document.getElementById('C').value;
-                    soalData.D = document.getElementById('D').value;
-                    soalData.tautanimg = document.getElementById('tautanimg').value || '';
-                    soalData.jawaban = document.getElementById('jawaban').value;
-                } else if (tipe === 'multiple') {
-                    soalData.soal = document.getElementById('soal').value;
-                    soalData.A = document.getElementById('A').value;
-                    soalData.B = document.getElementById('B').value;
-                    soalData.C = document.getElementById('C').value;
-                    soalData.D = document.getElementById('D').value;
-                    soalData.tautan = document.getElementById('tautan').value || '';
-                    soalData.jawaban = document.getElementById('jawaban').value;
-                } else if (tipe === 'bf') {
-                    soalData.soal = document.getElementById('soal').value;
-                    soalData.pernyataan1 = document.getElementById('pernyataan1').value;
-                    soalData.pernyataan2 = document.getElementById('pernyataan2').value;
-                    soalData.pernyataan3 = document.getElementById('pernyataan3').value;
-                    soalData.jwb1 = document.getElementById('jwb1').value;
-                    soalData.jwb2 = document.getElementById('jwb2').value;
-                    soalData.jwb3 = document.getElementById('jwb3').value;
-                    soalData.tautan = document.getElementById('tautan').value || '';
-                }
-                
-                // Validasi data tidak boleh kosong
-                for (let key in soalData) {
-                    if (soalData[key] === '' && key !== 'tautanimg' && key !== 'tautan') {
-                        throw new Error(`Field ${key} tidak boleh kosong`);
-                    }
-                }
-                
-                // Simpan ke Firestore
-                await db.collection('soal').add(soalData);
-                
-                statusDiv.innerHTML = '<div class="success-message">✅ Soal berhasil ditambahkan!</div>';
-                
-                // Reset form
-                document.getElementById('soalFormContainer').innerHTML = '';
-                document.getElementById('tipeSoal').value = '';
-                document.getElementById('mapel').value = '';
-                
-                // Refresh daftar soal
-                loadSoalList();
-                
-            } catch (error) {
-                console.error('Error adding soal:', error);
-                statusDiv.innerHTML = `
-                    <div class="error-message">
-                        ❌ Gagal: ${error.message}
-                    </div>
-                `;
-            } finally {
-                // Enable button
-                btn.disabled = false;
-                btn.textContent = 'Tambah Soal';
+async function tambahSoal() {
+    const mapel = document.getElementById('mapel').value;
+    const tipe = document.getElementById('tipeSoal').value;
+    const statusDiv = document.getElementById('manualStatus');
+    const btn = document.getElementById('tambahSoalBtn');
+    
+    if (!mapel || !tipe) {
+        statusDiv.innerHTML = '<div class="error-message">❌ Pilih mata pelajaran dan tipe soal</div>';
+        return;
+    }
+    
+    // Disable button
+    btn.disabled = true;
+    btn.textContent = '⏳ Menyimpan...';
+    statusDiv.innerHTML = '<div class="success-message">⏳ Menyimpan soal...</div>';
+    
+    try {
+        const soalData = {
+            mapel: mapel,
+            tipe: tipe,
+            aktif: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Ambil data sesuai tipe
+        if (tipe === 'pg') {
+            soalData.soal = document.getElementById('soal').value;
+            soalData.A = document.getElementById('A').value;
+            soalData.B = document.getElementById('B').value;
+            soalData.C = document.getElementById('C').value;
+            soalData.D = document.getElementById('D').value;
+            // KONVERSI LINK GAMBAR GOOGLE DRIVE
+            soalData.tautanimg = convertGoogleDriveLink(document.getElementById('tautanimg').value) || '';
+            soalData.jawaban = document.getElementById('jawaban').value;
+        } else if (tipe === 'multiple') {
+            soalData.soal = document.getElementById('soal').value;
+            soalData.A = document.getElementById('A').value;
+            soalData.B = document.getElementById('B').value;
+            soalData.C = document.getElementById('C').value;
+            soalData.D = document.getElementById('D').value;
+            // KONVERSI LINK GAMBAR GOOGLE DRIVE
+            soalData.tautan = convertGoogleDriveLink(document.getElementById('tautan').value) || '';
+            soalData.jawaban = document.getElementById('jawaban').value;
+        } else if (tipe === 'bf') {
+            soalData.soal = document.getElementById('soal').value;
+            soalData.pernyataan1 = document.getElementById('pernyataan1').value;
+            soalData.pernyataan2 = document.getElementById('pernyataan2').value;
+            soalData.pernyataan3 = document.getElementById('pernyataan3').value;
+            soalData.jwb1 = document.getElementById('jwb1').value;
+            soalData.jwb2 = document.getElementById('jwb2').value;
+            soalData.jwb3 = document.getElementById('jwb3').value;
+            // KONVERSI LINK GAMBAR GOOGLE DRIVE
+            soalData.tautan = convertGoogleDriveLink(document.getElementById('tautan').value) || '';
+        }
+        
+        // Validasi data tidak boleh kosong
+        for (let key in soalData) {
+            if (soalData[key] === '' && key !== 'tautanimg' && key !== 'tautan') {
+                throw new Error(`Field ${key} tidak boleh kosong`);
             }
         }
+        
+        // Simpan ke Firestore
+        await db.collection('soal').add(soalData);
+        
+        statusDiv.innerHTML = '<div class="success-message">✅ Soal berhasil ditambahkan!</div>';
+        
+        // Reset form
+        document.getElementById('soalFormContainer').innerHTML = '';
+        document.getElementById('tipeSoal').value = '';
+        document.getElementById('mapel').value = '';
+        
+        // Refresh daftar soal
+        loadSoalList();
+        
+    } catch (error) {
+        console.error('Error adding soal:', error);
+        statusDiv.innerHTML = `
+            <div class="error-message">
+                ❌ Gagal: ${error.message}
+            </div>
+        `;
+    } finally {
+        // Enable button
+        btn.disabled = false;
+        btn.textContent = 'Tambah Soal';
+    }
+}
         
         // Upload soal via Excel
        // Upload soal via Excel
@@ -648,103 +651,107 @@ async function uploadSoalExcel() {
                     };
                     
                     if (tipe === 'pg') {
-                        // Format: Tipe|Soal|A|B|C|D|Gambar|Jawaban
-                        soalData.soal = cleanRow[1] || '';
-                        soalData.A = cleanRow[2] || '';
-                        soalData.B = cleanRow[3] || '';
-                        soalData.C = cleanRow[4] || '';
-                        soalData.D = cleanRow[5] || '';
-                        soalData.tautanimg = cleanRow[6] || '';
-                        soalData.jawaban = cleanRow[7] || '';
-                        
-                        // Validasi
-                        if (!soalData.soal || !soalData.A || !soalData.B || !soalData.C || !soalData.D || !soalData.jawaban) {
-                            throw new Error('Data tidak lengkap');
-                        }
-                    } 
-                    else if (tipe === 'multiple') {
-                        // Format: Tipe|Soal|A|B|C|D|Gambar|Jawaban
-                        soalData.soal = cleanRow[1] || '';
-                        soalData.A = cleanRow[2] || '';
-                        soalData.B = cleanRow[3] || '';
-                        soalData.C = cleanRow[4] || '';
-                        soalData.D = cleanRow[5] || '';
-                        soalData.tautan = cleanRow[6] || '';
-                        soalData.jawaban = cleanRow[7] || '';
-                        
-                        // Validasi
-                        if (!soalData.soal || !soalData.A || !soalData.B || !soalData.C || !soalData.D || !soalData.jawaban) {
-                            throw new Error('Data tidak lengkap');
-                        }
-                    } 
-                    else if (tipe === 'bf') {
-                        // Format: Tipe|Soal|Pernyataan1|Pernyataan2|Pernyataan3|Jwb1|Jwb2|Jwb3|Gambar
-                        
-                        // Coba deteksi posisi kolom berdasarkan panjang array
-                        if (cleanRow.length >= 8) {
-                            // Format dengan 8 kolom (tanpa gambar)
-                            soalData.soal = cleanRow[1] || '';
-                            soalData.pernyataan1 = cleanRow[2] || '';
-                            soalData.pernyataan2 = cleanRow[3] || '';
-                            soalData.pernyataan3 = cleanRow[4] || '';
-                            soalData.jwb1 = cleanRow[5] || '';
-                            soalData.jwb2 = cleanRow[6] || '';
-                            soalData.jwb3 = cleanRow[7] || '';
-                            soalData.tautan = ''; // Tidak ada gambar
-                        } 
-                        else if (cleanRow.length >= 9) {
-                            // Format dengan 9 kolom (dengan gambar)
-                            soalData.soal = cleanRow[1] || '';
-                            soalData.pernyataan1 = cleanRow[2] || '';
-                            soalData.pernyataan2 = cleanRow[3] || '';
-                            soalData.pernyataan3 = cleanRow[4] || '';
-                            soalData.jwb1 = cleanRow[5] || '';
-                            soalData.jwb2 = cleanRow[6] || '';
-                            soalData.jwb3 = cleanRow[7] || '';
-                            soalData.tautan = cleanRow[8] || '';
-                        }
-                        else {
-                            // Format alternatif jika kolom digabung
-                            const gabung = cleanRow[1] || '';
-                            const parts = gabung.split('|');
-                            
-                            if (parts.length >= 7) {
-                                soalData.soal = parts[0] || '';
-                                soalData.pernyataan1 = parts[1] || '';
-                                soalData.pernyataan2 = parts[2] || '';
-                                soalData.pernyataan3 = parts[3] || '';
-                                soalData.jwb1 = parts[4] || '';
-                                soalData.jwb2 = parts[5] || '';
-                                soalData.jwb3 = parts[6] || '';
-                                soalData.tautan = parts[7] || '';
-                            } else {
-                                throw new Error('Format tidak dikenal');
-                            }
-                        }
-                        
-                        // Validasi data BF
-                        if (!soalData.soal) {
-                            throw new Error('Soal tidak boleh kosong');
-                        }
-                        if (!soalData.pernyataan1 || !soalData.pernyataan2 || !soalData.pernyataan3) {
-                            throw new Error('Pernyataan 1,2,3 harus diisi');
-                        }
-                        if (!soalData.jwb1 || !soalData.jwb2 || !soalData.jwb3) {
-                            throw new Error('Jawaban 1,2,3 harus diisi');
-                        }
-                        
-                        // Konversi jawaban ke huruf besar
-                        soalData.jwb1 = soalData.jwb1.toUpperCase();
-                        soalData.jwb2 = soalData.jwb2.toUpperCase();
-                        soalData.jwb3 = soalData.jwb3.toUpperCase();
-                        
-                        // Validasi jawaban harus B atau S
-                        if (!['B', 'S'].includes(soalData.jwb1) || 
-                            !['B', 'S'].includes(soalData.jwb2) || 
-                            !['B', 'S'].includes(soalData.jwb3)) {
-                            throw new Error('Jawaban harus B (Benar) atau S (Salah)');
-                        }
-                    }
+    // Format: Tipe|Soal|A|B|C|D|Gambar|Jawaban
+    soalData.soal = cleanRow[1] || '';
+    soalData.A = cleanRow[2] || '';
+    soalData.B = cleanRow[3] || '';
+    soalData.C = cleanRow[4] || '';
+    soalData.D = cleanRow[5] || '';
+    // KONVERSI LINK GAMBAR GOOGLE DRIVE
+    soalData.tautanimg = convertGoogleDriveLink(cleanRow[6] || '');
+    soalData.jawaban = cleanRow[7] || '';
+    
+    // Validasi
+    if (!soalData.soal || !soalData.A || !soalData.B || !soalData.C || !soalData.D || !soalData.jawaban) {
+        throw new Error('Data tidak lengkap');
+    }
+}
+                   else if (tipe === 'multiple') {
+    // Format: Tipe|Soal|A|B|C|D|Gambar|Jawaban
+    soalData.soal = cleanRow[1] || '';
+    soalData.A = cleanRow[2] || '';
+    soalData.B = cleanRow[3] || '';
+    soalData.C = cleanRow[4] || '';
+    soalData.D = cleanRow[5] || '';
+    // KONVERSI LINK GAMBAR GOOGLE DRIVE
+    soalData.tautan = convertGoogleDriveLink(cleanRow[6] || '');
+    soalData.jawaban = cleanRow[7] || '';
+    
+    // Validasi
+    if (!soalData.soal || !soalData.A || !soalData.B || !soalData.C || !soalData.D || !soalData.jawaban) {
+        throw new Error('Data tidak lengkap');
+    }
+} 
+else if (tipe === 'bf') {
+    // Format: Tipe|Soal|Pernyataan1|Pernyataan2|Pernyataan3|Jwb1|Jwb2|Jwb3|Gambar
+    
+    // Coba deteksi posisi kolom berdasarkan panjang array
+    if (cleanRow.length >= 8) {
+        // Format dengan 8 kolom (tanpa gambar)
+        soalData.soal = cleanRow[1] || '';
+        soalData.pernyataan1 = cleanRow[2] || '';
+        soalData.pernyataan2 = cleanRow[3] || '';
+        soalData.pernyataan3 = cleanRow[4] || '';
+        soalData.jwb1 = cleanRow[5] || '';
+        soalData.jwb2 = cleanRow[6] || '';
+        soalData.jwb3 = cleanRow[7] || '';
+        soalData.tautan = ''; // Tidak ada gambar
+    } 
+    else if (cleanRow.length >= 9) {
+        // Format dengan 9 kolom (dengan gambar)
+        soalData.soal = cleanRow[1] || '';
+        soalData.pernyataan1 = cleanRow[2] || '';
+        soalData.pernyataan2 = cleanRow[3] || '';
+        soalData.pernyataan3 = cleanRow[4] || '';
+        soalData.jwb1 = cleanRow[5] || '';
+        soalData.jwb2 = cleanRow[6] || '';
+        soalData.jwb3 = cleanRow[7] || '';
+        // KONVERSI LINK GAMBAR GOOGLE DRIVE
+        soalData.tautan = convertGoogleDriveLink(cleanRow[8] || '');
+    }
+    else {
+        // Format alternatif jika kolom digabung
+        const gabung = cleanRow[1] || '';
+        const parts = gabung.split('|');
+        
+        if (parts.length >= 7) {
+            soalData.soal = parts[0] || '';
+            soalData.pernyataan1 = parts[1] || '';
+            soalData.pernyataan2 = parts[2] || '';
+            soalData.pernyataan3 = parts[3] || '';
+            soalData.jwb1 = parts[4] || '';
+            soalData.jwb2 = parts[5] || '';
+            soalData.jwb3 = parts[6] || '';
+            // KONVERSI LINK GAMBAR GOOGLE DRIVE
+            soalData.tautan = convertGoogleDriveLink(parts[7] || '');
+        } else {
+            throw new Error('Format tidak dikenal');
+        }
+    }
+    
+    // Validasi data BF
+    if (!soalData.soal) {
+        throw new Error('Soal tidak boleh kosong');
+    }
+    if (!soalData.pernyataan1 || !soalData.pernyataan2 || !soalData.pernyataan3) {
+        throw new Error('Pernyataan 1,2,3 harus diisi');
+    }
+    if (!soalData.jwb1 || !soalData.jwb2 || !soalData.jwb3) {
+        throw new Error('Jawaban 1,2,3 harus diisi');
+    }
+    
+    // Konversi jawaban ke huruf besar
+    soalData.jwb1 = soalData.jwb1.toUpperCase();
+    soalData.jwb2 = soalData.jwb2.toUpperCase();
+    soalData.jwb3 = soalData.jwb3.toUpperCase();
+    
+    // Validasi jawaban harus B atau S
+    if (!['B', 'S'].includes(soalData.jwb1) || 
+        !['B', 'S'].includes(soalData.jwb2) || 
+        !['B', 'S'].includes(soalData.jwb3)) {
+        throw new Error('Jawaban harus B (Benar) atau S (Salah)');
+    }
+}
                     
                     // Simpan ke Firestore
                     await db.collection('soal').add(soalData);
@@ -911,6 +918,58 @@ async function uploadSoalExcel() {
         
         // Filter mapel
         document.getElementById('filterMapelList').addEventListener('change', loadSoalList);
+// ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
+// Fungsi untuk mengkonversi link Google Drive ke format yang bisa ditampilkan
+function convertGoogleDriveLink(url) {
+    if (!url || url === '') return '';
+    
+    // Jika sudah dalam format yang benar, return asli
+    if (url.includes('uc?export=view') || url.includes('thumbnail?')) {
+        return url;
+    }
+    
+    // Deteksi link Google Drive
+    if (url.includes('drive.google.com')) {
+        let fileId = '';
+        
+        // Format: https://drive.google.com/file/d/FILE_ID/view
+        const fileMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileMatch) {
+            fileId = fileMatch[1];
+        }
+        
+        // Format: https://drive.google.com/open?id=FILE_ID
+        const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (openMatch) {
+            fileId = openMatch[1];
+        }
+        
+        // Format: https://drive.google.com/uc?id=FILE_ID
+        const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (ucMatch) {
+            fileId = ucMatch[1];
+        }
+        
+        if (fileId) {
+            // Konversi ke format thumbnail (lebih stabil)
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+        }
+    }
+    
+    return url;
+}
+
+// Fungsi untuk preview gambar
+function previewImage(input, previewId) {
+    const preview = document.getElementById(previewId);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px; border-radius: 5px; margin-top: 10px;">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
     </script>
 </body>
 </html>
