@@ -353,6 +353,71 @@
         let paketSoal = '';
         let soalTerjawab = 0;
         
+// ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
+// ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
+function convertGoogleDriveLink(url) {
+    console.log('🔍 Original URL:', url); // LOG 1: Lihat URL asli
+    
+    if (!url || url === '') return '';
+    
+    // Jika sudah dalam format yang benar
+    if (url.includes('uc?export=view') || url.includes('thumbnail?')) {
+        console.log('✅ URL sudah dalam format yang benar'); // LOG 2
+        return url;
+    }
+    
+    // Deteksi link Google Drive
+    if (url.includes('drive.google.com')) {
+        console.log('📁 Mendeteksi link Google Drive'); // LOG 3
+        let fileId = '';
+        
+        // Format: https://drive.google.com/file/d/FILE_ID/view
+        const fileMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileMatch) {
+            fileId = fileMatch[1];
+            console.log('📌 File ID (format /d/):', fileId); // LOG 4
+        }
+        
+        // Format: https://drive.google.com/open?id=FILE_ID
+        const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (openMatch) {
+            fileId = openMatch[1];
+            console.log('📌 File ID (format open):', fileId); // LOG 5
+        }
+        
+        // Format: https://drive.google.com/uc?id=FILE_ID
+        const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (ucMatch) {
+            fileId = ucMatch[1];
+            console.log('📌 File ID (format uc):', fileId); // LOG 6
+        }
+        
+        if (fileId) {
+            const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+            console.log('🔄 Hasil konversi:', convertedUrl); // LOG 7
+            return convertedUrl;
+        } else {
+            console.log('❌ Gagal mengekstrak File ID'); // LOG 8
+        }
+    }
+    
+    console.log('ℹ️ Bukan link Google Drive, menggunakan URL asli'); // LOG 9
+    return url;
+}
+// Fungsi untuk mencoba ulang memuat gambar
+    function cobaUlangGambar(url) {
+        const imgElement = document.getElementById('questionImage');
+        const errorDiv = document.querySelector('.gambar-error');
+        
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+        
+        const imageUrl = convertGoogleDriveLink(url) + '&t=' + new Date().getTime();
+        imgElement.src = imageUrl;
+        imgElement.style.display = 'block';
+        imgElement.style.opacity = '0.5';
+    }
         // Load soal saat halaman dimuat
         window.addEventListener('load', function() {
             console.log('Memuat soal Bahasa Indonesia...');
@@ -462,14 +527,59 @@
             document.getElementById('questionText').innerHTML = soal.soal || 'Soal tidak tersedia';
             
             // Tampilkan gambar jika ada
-            const imgElement = document.getElementById('questionImage');
-            const gambar = soal.tautanimg || soal.tautan || '';
-            if (gambar) {
-                imgElement.src = gambar;
-                imgElement.style.display = 'block';
-            } else {
-                imgElement.style.display = 'none';
-            }
+   // Tampilkan gambar jika ada - DENGAN KONVERSI GOOGLE DRIVE
+const imgElement = document.getElementById('questionImage');
+const gambar = soal.tautanimg || soal.tautan || '';
+
+// Hapus gambar error sebelumnya jika ada
+const existingError = document.querySelector('.gambar-error');
+if (existingError) {
+    existingError.remove();
+}
+
+if (gambar) {
+    // Konversi link Google Drive
+    const imageUrl = convertGoogleDriveLink(gambar);
+    console.log('Memuat gambar:', imageUrl); // Untuk debugging
+    
+    imgElement.src = imageUrl;
+    imgElement.style.display = 'block';
+    
+    // Tambahkan loading indicator
+    imgElement.style.opacity = '0.5';
+    
+    // Error handling jika gambar gagal dimuat
+    imgElement.onload = function() {
+        this.style.opacity = '1';
+        console.log('Gambar berhasil dimuat');
+    };
+    
+    imgElement.onerror = function() {
+        console.log('Gambar gagal dimuat:', gambar);
+        this.style.display = 'none';
+        
+        // Tampilkan pesan error yang lebih informatif
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'gambar-error';
+        errorDiv.innerHTML = `
+            <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; margin: 20px 0;">
+                <span style="font-size: 24px;">📷</span>
+                <p style="margin-top: 10px; color: #856404;">
+                    <strong>Gambar tidak dapat ditampilkan</strong><br>
+                    <small style="font-size: 12px;">Link: ${gambar.substring(0, 50)}...</small>
+                </p>
+                <button onclick="cobaUlangGambar('${gambar}')" style="margin-top: 10px; padding: 5px 15px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    🔄 Coba Lagi
+                </button>
+            </div>
+        `;
+        
+        // Sisipkan setelah elemen gambar
+        imgElement.parentNode.insertBefore(errorDiv, imgElement.nextSibling);
+    };
+} else {
+    imgElement.style.display = 'none';
+}
             
             // Buat opsi jawaban berdasarkan tipe soal
             const optionsContainer = document.getElementById('optionsContainer');
@@ -834,6 +944,7 @@
                 e.returnValue = '';
             }
         });
+
     </script>
 </body>
 </html>
