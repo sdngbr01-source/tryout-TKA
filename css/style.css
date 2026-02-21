@@ -350,3 +350,90 @@ table tr:hover {
         width: 100%;
     }
 }
+/* Tambahkan di bagian style */
+.question-image {
+    max-width: 100%;
+    max-height: 300px;
+    margin: 20px auto;
+    display: block;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    border: 2px solid #f0f0f0;
+    padding: 5px;
+    background: white;
+    object-fit: contain;
+    transition: opacity 0.3s;
+}
+
+/* Loading animation */
+.image-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    width: 100%;
+    height: 200px;
+    border-radius: 10px;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Error message */
+.gambar-error {
+    margin: 20px 0;
+}
+
+/* Gambar preview saat loading */
+.image-preview-container {
+    position: relative;
+    min-height: 100px;
+}
+
+.image-preview-container.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* Tambahkan di bagian style */
+.question-image {
+    max-width: 100%;
+    max-height: 300px;
+    margin: 20px auto;
+    display: block;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    border: 2px solid #f0f0f0;
+    padding: 5px;
+    background: white;
+    object-fit: contain;
+    transition: opacity 0.3s;
+}
+
+/* Loading animation */
+.image-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    width: 100%;
+    height: 200px;
+    border-radius: 10px;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Error message container */
+.gambar-error {
+    margin: 20px 0;
+}
