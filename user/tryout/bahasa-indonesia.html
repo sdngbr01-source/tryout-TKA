@@ -536,7 +536,10 @@ const existingError = document.querySelector('.gambar-error');
 if (existingError) {
     existingError.remove();
 }
-
+ // Reset gambar
+    imgElement.style.display = 'none';
+    imgElement.src = '';
+            
 if (gambar) {
     // Konversi link Google Drive
     const imageUrl = convertGoogleDriveLink(gambar);
@@ -946,4 +949,5 @@ if (gambar) {
     </script>
 </body>
 </html>
+
 
