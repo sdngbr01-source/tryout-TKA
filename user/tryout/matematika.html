@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tryout Matematika - SDN Gambirono 01</title>
     <link rel="stylesheet" href="../../css/style.css">
     <style>
@@ -236,24 +236,6 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
-
-        /* Loading message */
-        .loading-message {
-            text-align: center;
-            padding: 10px;
-            color: #666;
-            font-size: 14px;
-            background: #e3f2fd;
-            border-radius: 5px;
-            margin: 10px 0;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
     </style>
 </head>
 <body>
@@ -387,76 +369,70 @@
         let paketSoal = '';
         let soalTerjawab = 0;
 
-        // ==================== FUNGSI COBA ULANG GAMBAR UNTUK POSTIMAGES ====================
-        function cobaUlangGambar(url) {
-            console.log('🔄 Mencoba ulang memuat gambar:', url);
+        // ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
+        function convertGoogleDriveLink(url) {
+            console.log('🔍 Original URL:', url); // LOG 1: Lihat URL asli
             
+            if (!url || url === '') return '';
+            
+            // Jika sudah dalam format yang benar
+            if (url.includes('uc?export=view') || url.includes('thumbnail?')) {
+                console.log('✅ URL sudah dalam format yang benar'); // LOG 2
+                return url;
+            }
+            
+            // Deteksi link Google Drive
+            if (url.includes('drive.google.com')) {
+                console.log('📁 Mendeteksi link Google Drive'); // LOG 3
+                let fileId = '';
+                
+                // Format: https://drive.google.com/file/d/FILE_ID/view
+                const fileMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (fileMatch) {
+                    fileId = fileMatch[1];
+                    console.log('📌 File ID (format /d/):', fileId); // LOG 4
+                }
+                
+                // Format: https://drive.google.com/open?id=FILE_ID
+                const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (openMatch) {
+                    fileId = openMatch[1];
+                    console.log('📌 File ID (format open):', fileId); // LOG 5
+                }
+                
+                // Format: https://drive.google.com/uc?id=FILE_ID
+                const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (ucMatch) {
+                    fileId = ucMatch[1];
+                    console.log('📌 File ID (format uc):', fileId); // LOG 6
+                }
+                
+                if (fileId) {
+                    const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+                    console.log('🔄 Hasil konversi:', convertedUrl); // LOG 7
+                    return convertedUrl;
+                } else {
+                    console.log('❌ Gagal mengekstrak File ID'); // LOG 8
+                }
+            }
+            
+            console.log('ℹ️ Bukan link Google Drive, menggunakan URL asli'); // LOG 9
+            return url;
+        }
+
+        // Fungsi untuk mencoba ulang memuat gambar
+        function cobaUlangGambar(url) {
             const imgElement = document.getElementById('questionImage');
             const errorDiv = document.querySelector('.gambar-error');
             
-            // Hapus pesan error sebelumnya
             if (errorDiv) {
                 errorDiv.remove();
             }
             
-            // Hapus pesan loading sebelumnya jika ada
-            const oldLoading = document.querySelector('.loading-message');
-            if (oldLoading) oldLoading.remove();
-            
-            // Untuk Postimages, tambahkan timestamp untuk mencegah cache
-            const imageUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
-            
-            // Tampilkan loading
+            const imageUrl = convertGoogleDriveLink(url) + '&t=' + new Date().getTime();
             imgElement.src = imageUrl;
             imgElement.style.display = 'block';
             imgElement.style.opacity = '0.5';
-            
-            // Atur dimensi untuk mobile
-            if (window.innerWidth <= 768) {
-                imgElement.style.maxWidth = '100%';
-                imgElement.style.width = '100%';
-                imgElement.style.height = 'auto';
-            }
-            
-            // Tampilkan pesan loading
-            const loadingMsg = document.createElement('div');
-            loadingMsg.className = 'loading-message';
-            loadingMsg.innerHTML = '⏳ Memuat gambar...';
-            imgElement.parentNode.insertBefore(loadingMsg, imgElement.nextSibling);
-            
-            // Event ketika gambar berhasil dimuat
-            imgElement.onload = function() {
-                this.style.opacity = '1';
-                const loading = document.querySelector('.loading-message');
-                if (loading) loading.remove();
-                console.log('✅ Gambar berhasil dimuat ulang');
-            };
-            
-            // Event ketika gambar gagal dimuat
-            imgElement.onerror = function() {
-                console.log('❌ Gambar gagal dimuat ulang:', url);
-                this.style.display = 'none';
-                
-                const loading = document.querySelector('.loading-message');
-                if (loading) loading.remove();
-                
-                // Tampilkan pesan error
-                const errorMsg = document.createElement('div');
-                errorMsg.className = 'gambar-error';
-                errorMsg.innerHTML = `
-                    <div style="text-align: center; padding: 20px; background: #f8d7da; color: #721c24; border-radius: 8px; margin: 20px 0;">
-                        <span style="font-size: 24px;">📷</span>
-                        <p style="margin-top: 10px;">
-                            <strong>Gagal memuat gambar</strong><br>
-                            <small>Periksa koneksi internet Anda</small>
-                        </p>
-                        <button onclick="cobaUlangGambar('${url}')" style="margin-top: 10px; padding: 8px 20px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                            🔄 Coba Lagi
-                        </button>
-                    </div>
-                `;
-                this.parentNode.insertBefore(errorMsg, this.nextSibling);
-            };
         }
 
         // Load soal saat halaman dimuat
@@ -567,7 +543,7 @@
             // Tampilkan teks soal
             document.getElementById('questionText').innerHTML = soal.soal || 'Soal tidak tersedia';
             
-            // Tampilkan gambar jika ada - UNTUK POSTIMAGES
+            // Tampilkan gambar jika ada - DENGAN KONVERSI GOOGLE DRIVE
             const imgElement = document.getElementById('questionImage');
             const gambar = soal.tautanimg || soal.tautan || '';
 
@@ -577,50 +553,38 @@
                 existingError.remove();
             }
 
-            // Hapus loading message sebelumnya
-            const existingLoading = document.querySelector('.loading-message');
-            if (existingLoading) {
-                existingLoading.remove();
-            }
-
             if (gambar) {
-                // LANGSUNG PAKAI URL DARI POSTIMAGES, TANPA KONVERSI
-                console.log('📸 Memuat gambar:', gambar);
+                // Konversi link Google Drive
+                const imageUrl = convertGoogleDriveLink(gambar);
+                console.log('📸 Memuat gambar:', imageUrl); // Untuk debugging
                 
-                imgElement.src = gambar;
+                imgElement.src = imageUrl;
                 imgElement.style.display = 'block';
                 
                 // Tambahkan loading indicator
                 imgElement.style.opacity = '0.5';
                 
-                // Atur dimensi untuk mobile
-                if (window.innerWidth <= 768) {
-                    imgElement.style.maxWidth = '100%';
-                    imgElement.style.width = '100%';
-                    imgElement.style.height = 'auto';
-                }
-                
                 // Error handling jika gambar gagal dimuat
                 imgElement.onload = function() {
                     this.style.opacity = '1';
-                    console.log('✅ Gambar berhasil dimuat di ' + (window.innerWidth <= 768 ? 'mobile' : 'desktop'));
+                    console.log('✅ Gambar berhasil dimuat');
                 };
                 
                 imgElement.onerror = function() {
                     console.log('❌ Gambar gagal dimuat:', gambar);
                     this.style.display = 'none';
                     
-                    // Tampilkan pesan error
+                    // Tampilkan pesan error yang lebih informatif
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'gambar-error';
                     errorDiv.innerHTML = `
-                        <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; margin: 20px 0;">
+                        <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; margin: 20px 0;">
                             <span style="font-size: 24px;">📷</span>
-                            <p style="margin-top: 10px; color: #856404; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'};">
+                            <p style="margin-top: 10px; color: #856404;">
                                 <strong>Gambar tidak dapat ditampilkan</strong><br>
-                                <small style="font-size: 12px;">Klik tombol di bawah untuk mencoba lagi</small>
+                                <small style="font-size: 12px;">Link: ${gambar.substring(0, 50)}...</small>
                             </p>
-                            <button onclick="cobaUlangGambar('${gambar}')" style="margin-top: 10px; padding: 8px 20px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'};">
+                            <button onclick="cobaUlangGambar('${gambar}')" style="margin-top: 10px; padding: 5px 15px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer;">
                                 🔄 Coba Lagi
                             </button>
                         </div>
@@ -957,16 +921,7 @@
                     </div>
                 `;
                 
-                // Sembunyikan navigasi (dengan pengecekan)
-                try {
-                    const navContainer = document.querySelector('.main-content > div:nth-child(5)');
-                    if (navContainer) navContainer.style.display = 'none';
-                    
-                    const soalNavigator = document.getElementById('soalNavigator');
-                    if (soalNavigator) soalNavigator.style.display = 'none';
-                } catch (e) {
-                    console.log('Navigasi tidak ditemukan');
-                }
+          
                 
             } catch (error) {
                 console.error('Error saving score:', error);
