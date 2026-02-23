@@ -352,7 +352,71 @@
         let waktuTotal = 3600; // 60 menit default
         let paketSoal = '';
         let soalTerjawab = 0;
+  // ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
+// ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
+function convertGoogleDriveLink(url) {
+    console.log('🔍 Original URL:', url); // LOG 1: Lihat URL asli
+    
+    if (!url || url === '') return '';
+    
+    // Jika sudah dalam format yang benar
+    if (url.includes('uc?export=view') || url.includes('thumbnail?')) {
+        console.log('✅ URL sudah dalam format yang benar'); // LOG 2
+        return url;
+    }
+    
+    // Deteksi link Google Drive
+    if (url.includes('drive.google.com')) {
+        console.log('📁 Mendeteksi link Google Drive'); // LOG 3
+        let fileId = '';
         
+        // Format: https://drive.google.com/file/d/FILE_ID/view
+        const fileMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileMatch) {
+            fileId = fileMatch[1];
+            console.log('📌 File ID (format /d/):', fileId); // LOG 4
+        }
+        
+        // Format: https://drive.google.com/open?id=FILE_ID
+        const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (openMatch) {
+            fileId = openMatch[1];
+            console.log('📌 File ID (format open):', fileId); // LOG 5
+        }
+        
+        // Format: https://drive.google.com/uc?id=FILE_ID
+        const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (ucMatch) {
+            fileId = ucMatch[1];
+            console.log('📌 File ID (format uc):', fileId); // LOG 6
+        }
+        
+        if (fileId) {
+            const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+            console.log('🔄 Hasil konversi:', convertedUrl); // LOG 7
+            return convertedUrl;
+        } else {
+            console.log('❌ Gagal mengekstrak File ID'); // LOG 8
+        }
+    }
+    
+    console.log('ℹ️ Bukan link Google Drive, menggunakan URL asli'); // LOG 9
+    return url;
+}
+// Fungsi untuk mencoba ulang memuat gambar
+    function cobaUlangGambar(url) {
+        const imgElement = document.getElementById('questionImage');
+        const errorDiv = document.querySelector('.gambar-error');
+        
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+        
+        const imageUrl = convertGoogleDriveLink(url) + '&t=' + new Date().getTime();
+        imgElement.src = imageUrl;
+        imgElement.style.display = 'block';
+        imgElement.style.opacity = '0.5';
+    }      
 
         // Load soal saat halaman dimuat
         window.addEventListener('load', function() {
@@ -882,6 +946,7 @@ if (gambar) {
     </script>
 </body>
 </html>
+
 
 
 
