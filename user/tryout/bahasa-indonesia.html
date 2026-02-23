@@ -352,7 +352,8 @@
         let waktuTotal = 3600; // 60 menit default
         let paketSoal = '';
         let soalTerjawab = 0;
-  // ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
+        
+// ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
 // ==================== FUNGSI KONVERSI GOOGLE DRIVE ====================
 function convertGoogleDriveLink(url) {
     console.log('🔍 Original URL:', url); // LOG 1: Lihat URL asli
@@ -416,8 +417,7 @@ function convertGoogleDriveLink(url) {
         imgElement.src = imageUrl;
         imgElement.style.display = 'block';
         imgElement.style.opacity = '0.5';
-    }      
-
+    }
         // Load soal saat halaman dimuat
         window.addEventListener('load', function() {
             console.log('Memuat soal Bahasa Indonesia...');
@@ -536,7 +536,7 @@ const existingError = document.querySelector('.gambar-error');
 if (existingError) {
     existingError.remove();
 }
-             
+
 if (gambar) {
     // Konversi link Google Drive
     const imageUrl = convertGoogleDriveLink(gambar);
@@ -946,8 +946,3 @@ if (gambar) {
     </script>
 </body>
 </html>
-
-
-
-
-
