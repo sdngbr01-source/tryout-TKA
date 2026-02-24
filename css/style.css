@@ -353,7 +353,7 @@ table tr:hover {
 /* Tambahkan di bagian style */
 .question-image {
     max-width: 100%;
-    max-height: 300px;
+    max-height: 600px;
     margin: 20px auto;
     display: block;
     border-radius: 10px;
@@ -406,7 +406,7 @@ table tr:hover {
 /* Tambahkan di bagian style */
 .question-image {
     max-width: 100%;
-    max-height: 300px;
+    max-height: 600px;
     margin: 20px auto;
     display: block;
     border-radius: 10px;
@@ -636,3 +636,4 @@ img.question-image[src]:not([src=""]) {
     margin: 10px 0;
     font-size: 12px;
 }
+
